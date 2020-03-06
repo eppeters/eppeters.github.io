@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Eddie makes website &emdash; Digging into xonsh history backends</title>
+    <link rel="stylesheet" href="./theme/css/typesetter.css" />
+    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Eddie makes website Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="Eddie makes website Categories Atom Feed" />
+  </head>
+  <body>
+    <header><a href="./" alt="Eddie makes website">Eddie makes website</a></header>
+    <nav>
+        <h1>Navigation</h2>
+        <ul>
+              <li><a href="./pages/about.html">about</a></li>
+              <li><a href="./pages/booksread.html">books</a></li>
+
+              <li><a href="./category/misc.html">misc</a></li>
+              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+        </ul>
+    </nav>
+    <aside>
+        <h1>Tags</h1>
+        <ul>
+            <li><a href="./tag/career.html">career</a></li>
+            <li><a href="./tag/gardening.html">gardening</a></li>
+            <li><a href="./tag/kids.html">kids</a></li>
+            <li><a href="./tag/linux.html">linux</a></li>
+            <li><a href="./tag/parenting.html">parenting</a></li>
+            <li><a href="./tag/project-management.html">project management</a></li>
+            <li><a href="./tag/python.html">python</a></li>
+            <li><a href="./tag/raspi.html">raspi</a></li>
+            <li><a href="./tag/resume.html">resume</a></li>
+            <li><a href="./tag/shell.html">shell</a></li>
+            <li><a href="./tag/software-development.html">software development</a></li>
+            <li><a href="./tag/xonsh.html">xonsh</a></li>
+            <li><a href="./tag/xontribs.html">xontribs</a></li>
+        </ul>
+    </aside>
+    <main>
+<h1>Digging into xonsh history backends</h1>
+<h2>Motivation</h2>
+<p>I want to write a per-directory-history xontrib for xonsh, like <a href="https://github.com/jimhester/per-directory-history">the one I used for zsh</a>. The piece of information that that I need to do this is missing from xonsh history entries right now: the working directory a historical command was executed in. <a href="https://github.com/jimhester/per-directory-history">jimhester/per-directory-history</a> tracks this by hooking into zsh's history searching and creation commands and putting each command in two history files, a global one and one specifically for the directory the command was executed in. I want to write my xontrib in the most xonshious (my word for if something works with the xonsh philosophy) way, so I don't want to rip this implementation scheme from <code>per-directory-history</code> and jam it into xonsh where there's a better way. So I have to see where I have to collect, store, and read this metadata.</p>
+<p>Some ideas I have so far are:</p>
+<ol>
+<li>add a new history backend that writes entries with the additional metadata of wherever the command was executed</li>
+<li>essentially step (1), but instead of adding a new history backend, augment whatever history backend is in use with this new functionlity (composition by way of monkey-patching)</li>
+<li>listen to some existing hooks/events for xonsh history lookup and additions and add the functionality there</li>
+</ol>
+<p>Or some combination of the above, depending on what I find.</p>
+<p>This post documents my exploration of how history is implemented in xonsh.</p>
+<p>I'll pay particular attention to how history backends work with the shell backend abstraction so that I can write a xontrib that is as agnostic as possible about the shell implementation in use (<code>ptk</code>, <code>ptk2</code>, <code>readline</code>, <code>jupyter</code>, etc.).</p>
+<h2>Reading the existing documentation first</h2>
+<p>So I figured that I should read any existing documentation first, since it's possible that:</p>
+<ol>
+<li>The xonsh docs already include a section that tell me how to do this or something close to it</li>
+<li>I might find learn something that I realize is undocumented, and then I can contribute that back to the project docs</li>
+</ol>
+<p>I found three documents dealing with history on <a href="https://xon.sh">xon.sh</a>:</p>
+<ul>
+<li><a href="https://xon.sh/tutorial_hist.html">Tutorial: History</a> - explains the richer model of history that xonsh offers, and introduces <code>history</code> command usage</li>
+<li><a href="https://xon.sh/tutorial_history_backend.html">Tutorial: Writing Your Own History Backend</a> - walks through authoring a new history backend with a CouchDB-backed history backend and replacing the default history backend with this new one</li>
+<li><a href="https://xon.sh/api/history/index.html">History API</a> - </li>
+</ul>
+<p>While each of these is good at doing what it says, notice that none of them discusses how history backends are instantiated or how history entries are constructed during shell execution. The History API docs come closest, but that's cheating because those docs are autogenerated from docstrings in the Python source for xonsh.</p>
+<h2>How history entries are managed</h2>
+<p>Since there is no smoking gun in the Xonsh docs talking about how history backends are created and where the components of history entries come from, I decided I have to dig into the xonsh code now rather than later.</p>
+<p>Rather than just explain when and how xonsh creates new history entries (which I will do some of), I also want to explain how I came to this understanding, since it's incredibly unlikely you're reading this doc just to learn how to write a clone of <a href="https://github.com/jimhester/per-directory-history">jimhester/per-directory-history</a>`.</p>
+<p>xonsh has support for multiple history backends, as we know. It ships with 3 backend implementations: <a href="">history.json.JsonHistory</a> and <a href="">history.sqlite.SqliteHistory</a>.</p>
+<p>These backends are implementations of the history backend abstraction <a href="">history.base.History</a>. <code>history.base.History</code> doesn't do anything useful on its own - it is just inherited by implementations and defines the things the xonsh shell expects a history backend to be able to do:</p>
+<ul>
+<li><code>append</code> (add something to the history)</li>
+<li><code>flush</code> (force whatever is in memory to persist to the backend's storage, such as disk)</li>
+<li><code>items</code> (getting items for the current history session)</li>
+<li><code>all_items</code> (getting... all the items)</li>
+<li><code>info</code> (providing shell history info)</li>
+<li><code>run_gc</code> (garbage collecting).</li>
+<li>It also allows list-like behavior via index access and slicing with <a href="https://docs.python.org/3/reference/datamodel.html#object.__getitem__"><strong>getitem</strong></a>.</li>
+</ul>
+<p>The fact that history backends implement <code>history.base.History</code> is our first clue into how xonsh backends work. This fact means the xonsh shell does not interact directly with a history backend, so the shell's code doesn't know what backend it's working with - this is handled by our good friend polymorphism. For understanding how history entries are created, this establishes some constraints on what a history backend can accept as input - if the central part of the xonsh shell's code is interacting with a unique history backend through a generic abstraction, that unique history backend cannot use input that isn't passed into the generic abstraction. In other words, the xonsh shell gives a particular history item data structure to every history backend, no matter how special that history backend is, and if we want the history backend to be able to act on some other piece of data (such as the working directory the history item was executed in!), we have to alter that data structure.</p>
+<h2>The history entry data structure</h2>
+<p>I had trouble finding where these entries were defined and where they were <code>append</code>ed to the history backend, but I soon realized I could drop an <code>ipdb</code> break statement into my active history backend's <code>append</code> method (<code>JsonHistory.append</code>) and use the debugger's <code>where</code> command to get a stacktrace, leading me directly to where xonsh appends history to the backend. I started up my debuggified xonsh, ran a command, watched as it paused in <code>ipdb</code>, and got the traceback:</p>
+<p>(Note that you should make sure <code>$XONSH_DEBUG</code> is on or, alternatively, install <code>xonsh</code> as an <a href="">editable package</a> to avoid <a href="">almalgamation</a> and can see your changes right away without re-running <code>setup.py</code>.)</p>
+<div class="highlight"><pre><span></span><span class="n">eddie</span><span class="nd">@eddie</span><span class="o">-</span><span class="n">ubuntu</span> <span class="o">~</span> <span class="err">$</span> <span class="n">echo</span> <span class="s1">&#39;hey&#39;</span>                                                                                                                 
+<span class="n">hey</span>
+<span class="o">&gt;</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">eddie</span><span class="o">/</span><span class="n">source</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">history</span><span class="o">/</span><span class="n">json</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">353</span><span class="p">)</span><span class="n">append</span><span class="p">()</span>
+    <span class="mi">352</span>         <span class="kn">import</span> <span class="nn">ipdb</span><span class="p">;</span> <span class="n">ipdb</span><span class="o">.</span><span class="n">set_trace</span><span class="p">()</span>
+<span class="o">--&gt;</span> <span class="mi">353</span>         <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+    <span class="mi">354</span>         <span class="bp">self</span><span class="o">.</span><span class="n">_len</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># must come before flushing</span>
+
+<span class="n">ipdb</span><span class="o">&gt;</span> <span class="n">where</span>
+  <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">eddie</span><span class="o">/.</span><span class="n">virtualenvs</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">xonsh</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span><span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span><span class="p">()</span>
+      <span class="mi">5</span> <span class="vm">__file__</span> <span class="o">=</span> <span class="s1">&#39;/home/eddie/source/xonsh/scripts/xonsh&#39;</span>
+      <span class="mi">6</span> <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="o">----&gt;</span> <span class="mi">7</span>     <span class="k">exec</span><span class="p">(</span><span class="nb">compile</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="vm">__file__</span><span class="p">,</span> <span class="s1">&#39;exec&#39;</span><span class="p">))</span>
+
+  <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">eddie</span><span class="o">/</span><span class="n">source</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">scripts</span><span class="o">/</span><span class="n">xonsh</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span><span class="p">()</span>
+      <span class="mi">2</span> 
+      <span class="mi">3</span> <span class="kn">from</span> <span class="nn">xonsh.main</span> <span class="kn">import</span> <span class="n">main</span>
+<span class="o">----&gt;</span> <span class="mi">4</span> <span class="n">main</span><span class="p">()</span>
+
+  <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">eddie</span><span class="o">/</span><span class="n">source</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">main</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">402</span><span class="p">)</span><span class="n">main</span><span class="p">()</span>
+    <span class="mi">401</span>         <span class="n">args</span> <span class="o">=</span> <span class="n">premain</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+<span class="o">--&gt;</span> <span class="mi">402</span>         <span class="k">return</span> <span class="n">main_xonsh</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="mi">403</span>     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+
+  <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">eddie</span><span class="o">/</span><span class="n">source</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">main</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">431</span><span class="p">)</span><span class="n">main_xonsh</span><span class="p">()</span>
+    <span class="mi">430</span>             <span class="k">try</span><span class="p">:</span>
+<span class="o">--&gt;</span> <span class="mi">431</span>                 <span class="n">shell</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">cmdloop</span><span class="p">()</span>
+    <span class="mi">432</span>             <span class="k">finally</span><span class="p">:</span>
+
+  <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">eddie</span><span class="o">/</span><span class="n">source</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">ptk2</span><span class="o">/</span><span class="n">shell</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">194</span><span class="p">)</span><span class="n">cmdloop</span><span class="p">()</span>
+    <span class="mi">193</span>                     <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precmd</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+<span class="o">--&gt;</span> <span class="mi">194</span>                     <span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="mi">195</span>             <span class="k">except</span> <span class="p">(</span><span class="ne">KeyboardInterrupt</span><span class="p">,</span> <span class="ne">SystemExit</span><span class="p">):</span>
+
+  <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">eddie</span><span class="o">/</span><span class="n">source</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">base_shell</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">375</span><span class="p">)</span><span class="n">default</span><span class="p">()</span>
+    <span class="mi">374</span>             <span class="n">tee_out</span> <span class="o">=</span> <span class="n">tee</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+<span class="o">--&gt;</span> <span class="mi">375</span>             <span class="bp">self</span><span class="o">.</span><span class="n">_append_history</span><span class="p">(</span><span class="n">inp</span><span class="o">=</span><span class="n">src</span><span class="p">,</span> <span class="n">ts</span><span class="o">=</span><span class="p">[</span><span class="n">ts0</span><span class="p">,</span> <span class="n">ts1</span><span class="p">],</span> <span class="n">tee_out</span><span class="o">=</span><span class="n">tee_out</span><span class="p">)</span>
+    <span class="mi">376</span>             <span class="bp">self</span><span class="o">.</span><span class="n">accumulated_inputs</span> <span class="o">+=</span> <span class="n">src</span>
+
+  <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">eddie</span><span class="o">/</span><span class="n">source</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">base_shell</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">410</span><span class="p">)</span><span class="n">_append_history</span><span class="p">()</span>
+    <span class="mi">409</span>         <span class="k">if</span> <span class="n">hist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+<span class="o">--&gt;</span> <span class="mi">410</span>             <span class="n">hist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+    <span class="mi">411</span>             <span class="n">hist</span><span class="o">.</span><span class="n">last_cmd_rtn</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">last_cmd_out</span> <span class="o">=</span> <span class="bp">None</span>
+
+<span class="o">&gt;</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">eddie</span><span class="o">/</span><span class="n">source</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">xonsh</span><span class="o">/</span><span class="n">history</span><span class="o">/</span><span class="n">json</span><span class="o">.</span><span class="n">py</span><span class="p">(</span><span class="mi">353</span><span class="p">)</span><span class="n">append</span><span class="p">()</span>
+    <span class="mi">352</span>         <span class="kn">import</span> <span class="nn">ipdb</span><span class="p">;</span> <span class="n">ipdb</span><span class="o">.</span><span class="n">set_trace</span><span class="p">()</span>
+<span class="o">--&gt;</span> <span class="mi">353</span>         <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+    <span class="mi">354</span>         <span class="bp">self</span><span class="o">.</span><span class="n">_len</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># must come before flushing</span>
+</pre></div>
+
+
+<p>Maybe that wouldn't have been so hard to track down manually, but history is appended to in <code>BaseShell.default()</code> with a method called <code>BaseShell._append_history()</code>.</p>
+<p>So what kind of information is passed to <code>_append_history</code>?</p>
+<div class="highlight"><pre><span></span> <span class="nv">def</span> <span class="nv">default</span><span class="ss">(</span><span class="nv">self</span>, <span class="nv">line</span><span class="ss">)</span>:
+     <span class="s2">&quot;&quot;&quot;</span><span class="s">Implements code execution.</span><span class="s2">&quot;&quot;&quot;</span>
+     <span class="nv">line</span> <span class="o">=</span> <span class="nv">line</span> <span class="k">if</span> <span class="nv">line</span>.<span class="nv">endswith</span><span class="ss">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="ss">)</span> <span class="k">else</span> <span class="nv">line</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+     <span class="nv">src</span>, <span class="nv">code</span> <span class="o">=</span> <span class="nv">self</span>.<span class="nv">push</span><span class="ss">(</span><span class="nv">line</span><span class="ss">)</span>
+     <span class="k">if</span> <span class="nv">code</span> <span class="nv">is</span> <span class="nv">None</span>:
+         <span class="k">return</span>
+
+     <span class="nv">events</span>.<span class="nv">on_precommand</span>.<span class="nv">fire</span><span class="ss">(</span><span class="nv">cmd</span><span class="o">=</span><span class="nv">src</span><span class="ss">)</span>
+
+     <span class="nv">env</span> <span class="o">=</span> <span class="nv">builtins</span>.<span class="nv">__xonsh__</span>.<span class="nv">env</span>
+     <span class="nv">hist</span> <span class="o">=</span> <span class="nv">builtins</span>.<span class="nv">__xonsh__</span>.<span class="nv">history</span>  # <span class="nv">pylint</span>: <span class="nv">disable</span><span class="o">=</span><span class="nv">no</span><span class="o">-</span><span class="nv">member</span>
+     <span class="nv">ts1</span> <span class="o">=</span> <span class="nv">None</span>
+     <span class="nv">enc</span> <span class="o">=</span> <span class="nv">env</span>.<span class="nv">get</span><span class="ss">(</span><span class="s2">&quot;</span><span class="s">XONSH_ENCODING</span><span class="s2">&quot;</span><span class="ss">)</span>
+     <span class="nv">err</span> <span class="o">=</span> <span class="nv">env</span>.<span class="nv">get</span><span class="ss">(</span><span class="s2">&quot;</span><span class="s">XONSH_ENCODING_ERRORS</span><span class="s2">&quot;</span><span class="ss">)</span>
+     <span class="nv">tee</span> <span class="o">=</span> <span class="nv">Tee</span><span class="ss">(</span><span class="nv">encoding</span><span class="o">=</span><span class="nv">enc</span>, <span class="nv">errors</span><span class="o">=</span><span class="nv">err</span><span class="ss">)</span>
+     <span class="nv">try</span>:
+         <span class="nv">ts0</span> <span class="o">=</span> <span class="nv">time</span>.<span class="nv">time</span><span class="ss">()</span>
+         <span class="nv">run_compiled_code</span><span class="ss">(</span><span class="nv">code</span>, <span class="nv">self</span>.<span class="nv">ctx</span>, <span class="nv">None</span>, <span class="s2">&quot;</span><span class="s">single</span><span class="s2">&quot;</span><span class="ss">)</span>
+         <span class="nv">ts1</span> <span class="o">=</span> <span class="nv">time</span>.<span class="nv">time</span><span class="ss">()</span>
+         <span class="k">if</span> <span class="nv">hist</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">None</span> <span class="nv">and</span> <span class="nv">hist</span>.<span class="nv">last_cmd_rtn</span> <span class="nv">is</span> <span class="nv">None</span>:
+             <span class="nv">hist</span>.<span class="nv">last_cmd_rtn</span> <span class="o">=</span> <span class="mi">0</span>  # <span class="nv">returncode</span> <span class="k">for</span> <span class="nv">success</span>
+     <span class="nv">except</span> <span class="nv">XonshError</span> <span class="nv">as</span> <span class="nv">e</span>:
+         <span class="nv">print</span><span class="ss">(</span><span class="nv">e</span>.<span class="nv">args</span>[<span class="mi">0</span>], <span class="nv">file</span><span class="o">=</span><span class="nv">sys</span>.<span class="nv">stderr</span><span class="ss">)</span>
+         <span class="k">if</span> <span class="nv">hist</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">None</span> <span class="nv">and</span> <span class="nv">hist</span>.<span class="nv">last_cmd_rtn</span> <span class="nv">is</span> <span class="nv">None</span>:
+             <span class="nv">hist</span>.<span class="nv">last_cmd_rtn</span> <span class="o">=</span> <span class="mi">1</span>  # <span class="k">return</span> <span class="nv">code</span> <span class="k">for</span> <span class="nv">failure</span>
+     <span class="nv">except</span> <span class="nv">Exception</span>:  # <span class="nv">pylint</span>: <span class="nv">disable</span><span class="o">=</span><span class="nv">broad</span><span class="o">-</span><span class="nv">except</span>
+         <span class="nv">print_exception</span><span class="ss">()</span>
+         <span class="k">if</span> <span class="nv">hist</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">None</span> <span class="nv">and</span> <span class="nv">hist</span>.<span class="nv">last_cmd_rtn</span> <span class="nv">is</span> <span class="nv">None</span>:
+             <span class="nv">hist</span>.<span class="nv">last_cmd_rtn</span> <span class="o">=</span> <span class="mi">1</span>  # <span class="k">return</span> <span class="nv">code</span> <span class="k">for</span> <span class="nv">failure</span>
+     <span class="nv">finally</span>:
+         <span class="nv">ts1</span> <span class="o">=</span> <span class="nv">ts1</span> <span class="nv">or</span> <span class="nv">time</span>.<span class="nv">time</span><span class="ss">()</span>
+         <span class="nv">tee_out</span> <span class="o">=</span> <span class="nv">tee</span>.<span class="nv">getvalue</span><span class="ss">()</span>
+         <span class="nv">self</span>.<span class="nv">_append_history</span><span class="ss">(</span><span class="nv">inp</span><span class="o">=</span><span class="nv">src</span>, <span class="nv">ts</span><span class="o">=</span>[<span class="nv">ts0</span>, <span class="nv">ts1</span>], <span class="nv">tee_out</span><span class="o">=</span><span class="nv">tee_out</span><span class="ss">)</span>
+         <span class="nv">self</span>.<span class="nv">accumulated_inputs</span> <span class="o">+=</span> <span class="nv">src</span>
+         <span class="k">if</span> <span class="ss">(</span>
+             <span class="nv">tee_out</span>
+             <span class="nv">and</span> <span class="nv">env</span>.<span class="nv">get</span><span class="ss">(</span><span class="s2">&quot;</span><span class="s">XONSH_APPEND_NEWLINE</span><span class="s2">&quot;</span><span class="ss">)</span>
+             <span class="nv">and</span> <span class="nv">not</span> <span class="nv">tee_out</span>.<span class="nv">endswith</span><span class="ss">(</span><span class="nv">os</span>.<span class="nv">linesep</span><span class="ss">)</span>
+         <span class="ss">)</span>:
+             <span class="nv">print</span><span class="ss">(</span><span class="nv">os</span>.<span class="nv">linesep</span>, <span class="k">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="ss">)</span>
+         <span class="nv">tee</span>.<span class="nv">close</span><span class="ss">()</span>
+         <span class="nv">self</span>.<span class="nv">_fix_cwd</span><span class="ss">()</span>
+     <span class="k">if</span> <span class="nv">builtins</span>.<span class="nv">__xonsh__</span>.<span class="k">exit</span>:  # <span class="nv">pylint</span>: <span class="nv">disable</span><span class="o">=</span><span class="nv">no</span><span class="o">-</span><span class="nv">member</span>
+         <span class="k">return</span> <span class="nv">True</span>
+</pre></div>
+
+
+<p>In the <code>finally</code> block, we see <code>inp</code> is <code>src</code>, which, after digging around a big into what happens above this call, appears to be the string that was typed into the command prompt, as opposed to the <code>code</code>, which is the xonsh code that was compiled and run (successfully or not) from compiling this <code>src</code>. Interestingly, this means we are typing in source code each time we enter text the xonsh REPL, and xonsh is compiling/running  it. The essential piece of a history entry is a bit of uncompiled source code (like <code>ls -alh</code> or <code>import sys</code>)!</p>
+<p>Let's follow an <code>ls</code> command entry from the prompt through <code>BaseShell.default()</code> and the code that appends the entry to history.</p>
+<p>The code block picks up just after I've entered the <code>ls</code> command at the prompt.</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="o">/</span><span class="nv">home</span><span class="o">/</span><span class="nv">eddie</span><span class="o">/</span><span class="nv">source</span><span class="o">/</span><span class="nv">xonsh</span><span class="o">/</span><span class="nv">xonsh</span><span class="o">/</span><span class="nv">base_shell</span>.<span class="nv">py</span><span class="ss">(</span><span class="mi">348</span><span class="ss">)</span><span class="nv">default</span><span class="ss">()</span>
+    <span class="mi">347</span>         <span class="nv">src</span>, <span class="nv">code</span> <span class="o">=</span> <span class="nv">self</span>.<span class="nv">push</span><span class="ss">(</span><span class="nv">line</span><span class="ss">)</span>
+<span class="o">--&gt;</span> <span class="mi">348</span>         <span class="k">if</span> <span class="nv">code</span> <span class="nv">is</span> <span class="nv">None</span>:
+    <span class="mi">349</span>             <span class="k">return</span>
+
+<span class="nv">ipdb</span><span class="o">&gt;</span> <span class="nv">code</span>                                                                                                                                                                                                                                                                                            
+<span class="o">&lt;</span><span class="nv">code</span> <span class="nv">object</span> <span class="o">&lt;</span><span class="nv">module</span><span class="o">&gt;</span> <span class="nv">at</span> <span class="mi">0</span><span class="nv">x7f3682be44b0</span>, <span class="nv">file</span> <span class="s2">&quot;</span><span class="s">/home/eddie/.virtualenvs/xonsh/lib/python3.7/site-packages/xontrib/fzf-widgets.xsh</span><span class="s2">&quot;</span>, <span class="nv">line</span> <span class="mi">1</span><span class="o">&gt;</span>
+<span class="nv">ipdb</span><span class="o">&gt;</span> <span class="nv">src</span>                                                                                                                                                                                                                                                                                             
+<span class="s1">&#39;</span><span class="s">ls</span><span class="se">\n</span><span class="s1">&#39;</span>
+</pre></div>
+
+
+<p>Note that <code>code</code> is apparently wrapped in some non-<code>ls</code> xontrib code I have installed. I'm unsure exactly why right now.</p>
+<p>But note that <code>src</code> is the <code>ls</code> command I typed in, followed by a newline.</p>
+<p>Once we get down to the actual appending, we see that <code>ts0</code> and <code>ts1</code> are the start and end timestamps of the code's execution. <code>tee_out</code> is simply the output of the command.</p>
+<div class="highlight"><pre><span></span>
+</pre></div>
+
+
+<p>--&gt; 377             self._append_history(inp=src, ts=[ts0, ts1], tee_out=tee_out)
+    378             self.accumulated_inputs += src
+    379             if (
+    380                 tee_out
+    381                 and env.get("XONSH_APPEND_NEWLINE")
+    382                 and not tee_out.endswith(os.linesep)
+    383             ):
+    384                 print(os.linesep, end="")
+    385             tee.close()
+    386             self._fix_cwd()
+    387         if builtins.<strong>xonsh</strong>.exit:  # pylint: disable=no-member
+    388             return True
+    389 </p>
+<p>ipdb&gt; src                                                                                                                                                                                                                                                                                           <br>
+'ls\n'
+ipdb&gt; ts0                                                                                                                                                                                                                                                                                           <br>
+1560283660.1879137
+ipdb&gt; ts1                                                                                                                                                                                                                                                                                           <br>
+1560283660.3324323</p>
+<div class="highlight"><pre><span></span><span class="n">Let</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">step</span> <span class="k">into</span> <span class="o">`</span><span class="n">_append_history</span><span class="p">()</span><span class="o">`</span><span class="p">.</span>
+</pre></div>
+
+
+<p>def _append_history(self, tee_out=None, **info):
+     """Append information about the command to the history.</p>
+<div class="highlight"><pre><span></span> <span class="nv">This</span> <span class="nv">also</span> <span class="nv">handles</span> <span class="nv">on_postcommand</span> <span class="nv">because</span> <span class="nv">this</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">place</span> <span class="nv">where</span> <span class="nv">all</span> <span class="nv">the</span>
+ <span class="nv">information</span> <span class="nv">is</span> <span class="nv">available</span>.
+ <span class="s2">&quot;&quot;&quot;</span>
+ <span class="nv">hist</span> <span class="o">=</span> <span class="nv">builtins</span>.<span class="nv">__xonsh__</span>.<span class="nv">history</span>  # <span class="nv">pylint</span>: <span class="nv">disable</span><span class="o">=</span><span class="nv">no</span><span class="o">-</span><span class="nv">member</span>
+ <span class="nv">info</span>[<span class="s2">&quot;</span><span class="s">rtn</span><span class="s2">&quot;</span>] <span class="o">=</span> <span class="nv">hist</span>.<span class="nv">last_cmd_rtn</span> <span class="k">if</span> <span class="nv">hist</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">None</span> <span class="k">else</span> <span class="nv">None</span>
+ <span class="nv">tee_out</span> <span class="o">=</span> <span class="nv">tee_out</span> <span class="nv">or</span> <span class="nv">None</span>
+ <span class="nv">last_out</span> <span class="o">=</span> <span class="nv">hist</span>.<span class="nv">last_cmd_out</span> <span class="k">if</span> <span class="nv">hist</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">None</span> <span class="k">else</span> <span class="nv">None</span>
+ <span class="k">if</span> <span class="nv">last_out</span> <span class="nv">is</span> <span class="nv">None</span> <span class="nv">and</span> <span class="nv">tee_out</span> <span class="nv">is</span> <span class="nv">None</span>:
+     <span class="nv">pass</span>
+ <span class="nv">elif</span> <span class="nv">last_out</span> <span class="nv">is</span> <span class="nv">None</span> <span class="nv">and</span> <span class="nv">tee_out</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">None</span>:
+     <span class="nv">info</span>[<span class="s2">&quot;</span><span class="s">out</span><span class="s2">&quot;</span>] <span class="o">=</span> <span class="nv">tee_out</span>
+ <span class="nv">elif</span> <span class="nv">last_out</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">None</span> <span class="nv">and</span> <span class="nv">tee_out</span> <span class="nv">is</span> <span class="nv">None</span>:
+     <span class="nv">info</span>[<span class="s2">&quot;</span><span class="s">out</span><span class="s2">&quot;</span>] <span class="o">=</span> <span class="nv">last_out</span>
+ <span class="k">else</span>:
+     <span class="nv">info</span>[<span class="s2">&quot;</span><span class="s">out</span><span class="s2">&quot;</span>] <span class="o">=</span> <span class="nv">tee_out</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nv">last_out</span>
+ <span class="nv">events</span>.<span class="nv">on_postcommand</span>.<span class="nv">fire</span><span class="ss">(</span>
+     <span class="nv">cmd</span><span class="o">=</span><span class="nv">info</span>[<span class="s2">&quot;</span><span class="s">inp</span><span class="s2">&quot;</span>], <span class="nv">rtn</span><span class="o">=</span><span class="nv">info</span>[<span class="s2">&quot;</span><span class="s">rtn</span><span class="s2">&quot;</span>], <span class="nv">out</span><span class="o">=</span><span class="nv">info</span>.<span class="nv">get</span><span class="ss">(</span><span class="s2">&quot;</span><span class="s">out</span><span class="s2">&quot;</span>, <span class="nv">None</span><span class="ss">)</span>, <span class="nv">ts</span><span class="o">=</span><span class="nv">info</span>[<span class="s2">&quot;</span><span class="s">ts</span><span class="s2">&quot;</span>]
+ <span class="ss">)</span>
+ <span class="k">if</span> <span class="nv">hist</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">None</span>:
+     <span class="nv">hist</span>.<span class="nv">append</span><span class="ss">(</span><span class="nv">info</span><span class="ss">)</span>
+     <span class="nv">hist</span>.<span class="nv">last_cmd_rtn</span> <span class="o">=</span> <span class="nv">hist</span>.<span class="nv">last_cmd_out</span> <span class="o">=</span> <span class="nv">None</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="nv">It</span> <span class="nv">isn</span><span class="s1">&#39;</span><span class="s">t the most exciting code. It is really just a matter of adding return code information for failed commands and, if available, the output of the command, to the `info` (history entry) provided to the backend. As a funny aside most of this method is a heuristic for deciding whether to use tee output or `last_cmd_out` from the history backend, which `last_cmd_out` seems to be an unused property in at least all the built-in history backends. Would be interesting to know why it ever existed at all!</span>
+
+<span class="nv">The</span> <span class="nv">crucial</span> <span class="nv">thing</span> <span class="nv">we</span> <span class="nv">learn</span> <span class="nv">here</span>, <span class="nv">though</span>, <span class="nv">is</span> <span class="nv">that</span> `<span class="nv">info</span>` <span class="nv">is</span> <span class="nv">effectively</span> <span class="nv">what</span> <span class="nv">we</span><span class="s1">&#39;</span><span class="s">ve been calling the history entry. It is the &quot;packet&quot; (concretely, a `dict`) of information that is appended to the history. It defines what our history backend can save, delete, search, manipulate, etc. So any additional information we would need to add for our history backend would have to be added to `info`.</span>
+
+<span class="nv">Let</span><span class="s1">&#39;</span><span class="s">s take a look at the `info` object for two different cases. In the first, I</span><span class="s1">&#39;</span><span class="nv">ll</span> <span class="nv">call</span> `<span class="nv">ls</span>` <span class="nv">in</span> <span class="nv">a</span> <span class="nv">directory</span> <span class="nv">with</span> <span class="nv">exactly</span> <span class="nv">one</span> <span class="o">*</span><span class="nv">empty</span><span class="o">*</span> <span class="nv">regular</span> <span class="nv">file</span>: `<span class="nv">test</span>`, <span class="nv">and</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">second</span> <span class="nv">I</span><span class="s1">&#39;</span><span class="s">ll call `grep something test` in the same directory. The `ls` call will provide a successful return value and the `grep` call will not (since `test` will be empty).</span>
+
+<span class="nv">Calling</span> `<span class="nv">ls</span>`:
+
+```<span class="nv">python</span>
+{<span class="s1">&#39;</span><span class="s">inp</span><span class="s1">&#39;</span>: <span class="s1">&#39;</span><span class="s">ls</span><span class="se">\n</span><span class="s1">&#39;</span>, <span class="s1">&#39;</span><span class="s">ts</span><span class="s1">&#39;</span>: [<span class="mi">1560285242</span>.<span class="mi">9592671</span>, <span class="mi">1560285243</span>.<span class="mi">0506482</span>], <span class="s1">&#39;</span><span class="s">rtn</span><span class="s1">&#39;</span>: <span class="mi">0</span>, <span class="s1">&#39;</span><span class="s">out</span><span class="s1">&#39;</span>: <span class="s1">&#39;</span><span class="s">test</span><span class="se">\n</span><span class="s1">&#39;</span>}
+</pre></div>
+
+
+<p>Calling <code>grep something test</code>:</p>
+<div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;inp&#39;</span><span class="p">:</span> <span class="s1">&#39;grep something test</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;ts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1560285373.0232306</span><span class="p">,</span> <span class="mf">1560285373.125136</span><span class="p">],</span> <span class="s1">&#39;rtn&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+
+
+<p>There you have it - all the information available to a history backend's <code>append()</code> method as far as I can tell.</p>
+<h2>Thoughts on where I should go</h2>
+<p>So I've been digging around in here to ultimately change what history items are loaded when a user interactively scrolls through the history, uses the <code>history</code> command, etc., with the aim of showing only the history items that are associated with the current working directory. To do that, I have to get <code>cwd</code> information into each history item.</p>
+<p>To fast-forward a bit, I've now done that, and it's pretty simple, though it did require a change to the xonsh source code:</p>
+<div class="highlight"><pre><span></span><span class="gh">diff --git a/xonsh/base_shell.py b/xonsh/base_shell.py</span>
+<span class="gh">index b7e9aff2..7088427f 100644</span>
+<span class="gd">--- a/xonsh/base_shell.py</span>
+<span class="gi">+++ b/xonsh/base_shell.py</span>
+<span class="gu">@@ -393,6 +393,8 @@ class BaseShell(object):</span>
+         &quot;&quot;&quot;
+         hist = builtins.__xonsh__.history  # pylint: disable=no-member
+         info[&quot;rtn&quot;] = hist.last_cmd_rtn if hist is not None else None
+<span class="gi">+        if builtins.__xonsh__.env.get(&quot;XONSH_STORE_CWD&quot;):</span>
+<span class="gi">+            info[&#39;cwd&#39;] = os.getcwd()</span>
+         tee_out = tee_out or None
+         last_out = hist.last_cmd_out if hist is not None else None
+         if last_out is None and tee_out is None:
+</pre></div>
+
+
+<p>Luckily, when I had asked whether such a xontrib as <code>per-directory-history</code> existed yet, xonsh creator <a href="https://github.com/scopatz">Anthony Scopatz</a> told me he'd be up for modifying the history mechanism to support this kind of xontrib, so we're good here.</p>
+<p>The next question I had was how I could make history:</p>
+<ul>
+<li>aware of this new information</li>
+<li>optionally able to use this information by installing a xontrib</li>
+<li>hopefully prompt-backend agnostic</li>
+</ul>
+<p>To make history aware of this new info, I had to alter the history backends - each history backend has a different way of handling the attributes of history items. I decided to follow a depth-first way of experimenting, hoping that if I got my history functionality working with <code>JsonHistory</code>, probably the most commonly used backend, I could either figure out how to get it working with other backends, or (less good) just make my xontrib available to people using the <code>JsonHistory</code> backend.</p>
+<p>Next, I looked at where history strings are loaded by xonsh, so that I could start limiting the items loaded to those that matched by <code>cwd</code>. My thought was that each time history was searched by the user, by whatever mechanism, if I found the point where history strings were loaded, I could filter out those that didn't match.</p>
+<p>I thought that creating a history backend with an overridden method would help since custom history backends are easily pluggable with the <code>XONSH_HISTORY_BACKEND</code> environment varible, thus making any solution that used a custom one pretty easily installable via a xontrib.</p>
+<p>Unfortunately there was no clear and easy way to override the history backend functionality to filter out history entries on arbitrary criteria, so I added yet another thing to the xonsh source:</p>
+<div class="highlight"><pre><span></span><span class="gh">diff --git a/xonsh/history/json.py b/xonsh/history/json.py</span>
+<span class="gh">index 50b6326b..7313cfc9 100644</span>
+<span class="gd">--- a/xonsh/history/json.py</span>
+<span class="gi">+++ b/xonsh/history/json.py</span>
+<span class="gu">@@ -328,6 +328,7 @@ class JsonHistory(History):</span>
+<span class="gd">--- a/xonsh/history/json.py</span>
+<span class="gd">--- a/xonsh/history/json.py</span>
+<span class="gi">+++ b/xonsh/history/json.py</span>
+<span class="gu">@@ -328,6 +328,7 @@ class JsonHistory(History):</span>
+         self.tss = JsonCommandField(&quot;ts&quot;, self)
+         self.inps = JsonCommandField(&quot;inp&quot;, self)
+         self.outs = JsonCommandField(&quot;out&quot;, self)
+<span class="gi">+        self.cwds = JsonCommandField(&quot;cwd&quot;, self)</span>
+         self.rtns = JsonCommandField(&quot;rtn&quot;, self)
+
+     def __len__(self):
+<span class="gu">@@ -382,10 +383,11 @@ class JsonHistory(History):</span>
+     def items(self, newest_first=False):
+         &quot;&quot;&quot;Display history items of current session.&quot;&quot;&quot;
+         if newest_first:
+<span class="gd">-            items = zip(reversed(self.inps), reversed(self.tss))</span>
+<span class="gi">+            items = zip(</span>
+<span class="gi">+                reversed(self.inps), reversed(self.tss), reversed(self.cwds))</span>
+         else:
+<span class="gd">-            items = zip(self.inps, self.tss)</span>
+<span class="gd">-        for item, tss in items:</span>
+<span class="gi">+            items = zip(self.inps, self.tss, self.cwds)</span>
+<span class="gi">+        for item, tss, _ in items:</span>
+             yield {&quot;inp&quot;: item.rstrip(), &quot;ts&quot;: tss[0]}
+
+     def all_items(self, newest_first=False, **kwargs):
+<span class="gu">@@ -413,10 +415,16 @@ class JsonHistory(History):</span>
+             if newest_first:
+                 commands = reversed(commands)
+             for c in commands:
+<span class="gd">-                yield {&quot;inp&quot;: c[&quot;inp&quot;].rstrip(), &quot;ts&quot;: c[&quot;ts&quot;][0]}</span>
+<span class="gi">+                if self._include_history_item(c):</span>
+<span class="gi">+                    yield {&quot;inp&quot;: c[&quot;inp&quot;].rstrip(), &quot;ts&quot;: c[&quot;ts&quot;][0]}</span>
+         # all items should also include session items
+         yield from self.items()
+
+<span class="gi">+    def _include_history_item(self, item):</span>
+<span class="gi">+        &quot;&quot;&quot;Whether to include the history item.</span>
+<span class="gi">+        Allows filtering history results by subclass.&quot;&quot;&quot;</span>
+<span class="gi">+        return True</span>
+<span class="gi">+</span>
+</pre></div>
+
+
+<p>In short, this diff just adds a method that checks whether a history item should be used, and in the default case (the <code>JsonHistory</code> base class), it simply allows all history items.</p>
+<p>In my xontrib, I created a custom history backend that performed the filtering I wanted:</p>
+<div class="highlight"><pre><span></span><span class="nv">class</span> <span class="nv">JsonPerDirectoryHistory</span><span class="ss">(</span><span class="nv">JsonHistory</span><span class="ss">)</span>:
+    <span class="nv">def</span> <span class="nv">__init__</span><span class="ss">(</span><span class="nv">self</span>, <span class="o">*</span><span class="nv">args</span>, <span class="o">**</span><span class="nv">kwargs</span><span class="ss">)</span>:
+        <span class="nv">super</span><span class="ss">()</span>.<span class="nv">__init__</span><span class="ss">(</span><span class="o">*</span><span class="nv">args</span>, <span class="o">**</span><span class="nv">kwargs</span><span class="ss">)</span>
+        <span class="nv">self</span>.<span class="nv">use_local_history</span> <span class="o">=</span> <span class="nv">True</span>
+
+    <span class="nv">def</span> <span class="nv">_include_history_item</span><span class="ss">(</span><span class="nv">self</span>, <span class="nv">item</span><span class="ss">)</span>:
+        <span class="nv">run_in_terminal</span><span class="ss">(</span><span class="nv">lambda</span>: <span class="nv">print</span><span class="ss">(</span><span class="nv">f</span><span class="s1">&#39;</span><span class="s">Got item {item}</span><span class="s1">&#39;</span><span class="ss">))</span>
+        <span class="nv">run_in_terminal</span><span class="ss">(</span><span class="nv">lambda</span>: <span class="nv">print</span><span class="ss">(</span><span class="nv">f</span><span class="s1">&#39;</span><span class="s">Use local history: {self.use_local_history}</span><span class="s1">&#39;</span><span class="ss">))</span>
+        <span class="k">if</span> <span class="nv">self</span>.<span class="nv">use_local_history</span> <span class="nv">and</span> <span class="nv">item</span>.<span class="nv">get</span><span class="ss">(</span><span class="s1">&#39;</span><span class="s">cwd</span><span class="s1">&#39;</span><span class="ss">)</span> <span class="nv">and</span> <span class="nv">os</span>.<span class="nv">getcwd</span><span class="ss">()</span> <span class="o">==</span> <span class="nv">item</span>.<span class="nv">get</span><span class="ss">(</span><span class="s1">&#39;</span><span class="s">cwd</span><span class="s1">&#39;</span><span class="ss">)</span>:
+            <span class="nv">run_in_terminal</span><span class="ss">(</span><span class="nv">lambda</span>: <span class="nv">print</span><span class="ss">(</span><span class="s1">&#39;</span><span class="s">Using item</span><span class="s1">&#39;</span><span class="ss">))</span>
+            <span class="k">return</span> <span class="nv">True</span>
+        <span class="nv">run_in_terminal</span><span class="ss">(</span><span class="nv">lambda</span>: <span class="nv">print</span><span class="ss">(</span><span class="s1">&#39;</span><span class="s">Not using item</span><span class="s1">&#39;</span><span class="ss">))</span>
+        <span class="k">return</span> <span class="nv">False</span>
+</pre></div>
+
+
+<p>Notice in this that there are some Prompt Toolkit-specific <code>run_in_terminal</code> <code>print</code> calls, which I've added just for very verbose logging while developing. I'd remove these when releasing this xontrib, assuming I keep support for non-Prompt Toolkit shells.</p>
+<p>In the xontrib, I set a <code>prompt_toolkit2</code> keybinding to switch this functionality on and off, and to tell the user what mode they've switched to:</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">stdout</span>
+
+<span class="kn">from</span> <span class="nn">prompt_toolkit</span> <span class="kn">import</span> <span class="n">keys</span><span class="p">,</span> <span class="n">print_formatted_text</span>
+<span class="kn">from</span> <span class="nn">prompt_toolkit.application</span> <span class="kn">import</span> <span class="n">run_in_terminal</span>
+
+<span class="kn">from</span> <span class="nn">builtins</span> <span class="kn">import</span> <span class="n">__xonsh__</span>
+<span class="kn">from</span> <span class="nn">xonsh.history.json</span> <span class="kn">import</span> <span class="n">JsonHistory</span>
+<span class="kn">from</span> <span class="nn">xonsh.platform</span> <span class="kn">import</span> <span class="n">ptk_shell_type</span>
+
+
+<span class="k">def</span> <span class="nf">toggle_per_directory_history</span><span class="p">():</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">__xonsh__</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="n">JsonPerDirectoryHistory</span><span class="p">):</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">__xonsh__</span><span class="o">.</span><span class="n">history</span>
+        <span class="n">hist</span><span class="o">.</span><span class="n">use_local_history</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">hist</span><span class="o">.</span><span class="n">use_local_history</span>
+        <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">use_local_history</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;local&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;global&#39;</span>
+
+
+<span class="nd">@events.on_ptk_create</span>
+<span class="k">def</span> <span class="nf">custom_keybindings</span><span class="p">(</span><span class="n">bindings</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">do_nothing</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="n">ptk_shell_type</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;prompt_toolkit2&#39;</span><span class="p">:</span>
+        <span class="n">binder</span> <span class="o">=</span> <span class="n">bindings</span><span class="o">.</span><span class="n">add</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">binder</span> <span class="o">=</span> <span class="n">bindings</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">add_binding</span>
+
+    <span class="n">key</span> <span class="o">=</span> <span class="err">$</span><span class="p">{</span><span class="o">...</span><span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PER_DIRECTORY_HISTORY_TOGGLE&#39;</span><span class="p">)</span>
+
+    <span class="nd">@binder</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">switch_between_global_and_local_history</span><span class="p">(</span><span class="n">_</span><span class="p">):</span>
+        <span class="n">new_hist_type</span> <span class="o">=</span> <span class="n">toggle_per_directory_history</span><span class="p">()</span>
+        <span class="n">run_in_terminal</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Switching to {new_hist_type} history.&#39;</span><span class="p">))</span>
+</pre></div>
+
+
+<p>Finally, I set my history backend to my custom one in my <code>.xonshrc</code> and turned on per-directory history:</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">xontrib.per_directory_history</span> <span class="kn">import</span> <span class="n">JsonPerDirectoryHistory</span>
+<span class="err">$</span><span class="n">XONSH_HISTORY_BACKEND</span> <span class="o">=</span> <span class="n">JsonPerDirectoryHistory</span>
+<span class="err">$</span><span class="n">XONSH_STORE_CWD</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+
+
+<h2>Initial results</h2>
+<p>Failure, mostly. Upon opening a <code>gnome-terminal</code> instance, I saw the debugging messages printed from my history backend, which was nice:</p>
+<div class="highlight"><pre><span></span><span class="n">Got</span> <span class="n">item</span> <span class="err">{</span><span class="s1">&#39;cwd&#39;</span><span class="p">:</span> <span class="s1">&#39;/home/eddie/source/xonsh&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">:</span> <span class="s1">&#39;ls\n&#39;</span><span class="p">,</span> <span class="s1">&#39;rtn&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;ts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1560543198</span><span class="p">.</span><span class="mi">0524652</span><span class="p">,</span> <span class="mi">1560543198</span><span class="p">.</span><span class="mi">1038635</span><span class="p">]</span><span class="err">}</span>
+<span class="n">Use</span> <span class="k">local</span> <span class="n">history</span><span class="p">:</span> <span class="k">True</span>
+<span class="k">Not</span> <span class="k">using</span> <span class="n">item</span>
+<span class="n">Got</span> <span class="n">item</span> <span class="err">{</span><span class="s1">&#39;cwd&#39;</span><span class="p">:</span> <span class="s1">&#39;/home/eddie/source/xonsh&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">:</span> <span class="s1">&#39;z xonsh\n&#39;</span><span class="p">,</span> <span class="s1">&#39;rtn&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;ts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1560543197</span><span class="p">.</span><span class="mi">440549</span><span class="p">,</span> <span class="mi">1560543197</span><span class="p">.</span><span class="mi">4461908</span><span class="p">]</span><span class="err">}</span>
+<span class="n">Use</span> <span class="k">local</span> <span class="n">history</span><span class="p">:</span> <span class="k">True</span>
+<span class="k">Not</span> <span class="k">using</span> <span class="n">item</span>
+<span class="n">Got</span> <span class="n">item</span> <span class="err">{</span><span class="s1">&#39;cwd&#39;</span><span class="p">:</span> <span class="s1">&#39;/home/eddie&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">:</span> <span class="s1">&#39;cd ..\n&#39;</span><span class="p">,</span> <span class="s1">&#39;rtn&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;ts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1560543047</span><span class="p">.</span><span class="mi">8660042</span><span class="p">,</span> <span class="mi">1560543047</span><span class="p">.</span><span class="mi">8693159</span><span class="p">]</span><span class="err">}</span>
+<span class="n">Use</span> <span class="k">local</span> <span class="n">history</span><span class="p">:</span> <span class="k">True</span>
+<span class="k">Using</span> <span class="n">item</span>
+<span class="n">Got</span> <span class="n">item</span> <span class="err">{</span><span class="s1">&#39;cwd&#39;</span><span class="p">:</span> <span class="s1">&#39;/home/eddie/test&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">:</span> <span class="s1">&#39;fancy mccheeese\n&#39;</span><span class="p">,</span> <span class="s1">&#39;rtn&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;ts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1560543038</span><span class="p">.</span><span class="mi">735667</span><span class="p">,</span> <span class="mi">1560543039</span><span class="p">.</span><span class="mi">5000844</span><span class="p">]</span><span class="err">}</span>
+<span class="n">Use</span> <span class="k">local</span> <span class="n">history</span><span class="p">:</span> <span class="k">True</span>
+<span class="k">Not</span> <span class="k">using</span> <span class="n">item</span>
+<span class="n">Got</span> <span class="n">item</span> <span class="err">{</span><span class="s1">&#39;cwd&#39;</span><span class="p">:</span> <span class="s1">&#39;/home/eddie/test&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">:</span> <span class="s1">&#39;cd test\n&#39;</span><span class="p">,</span> <span class="s1">&#39;rtn&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;ts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1560543024</span><span class="p">.</span><span class="mi">288666</span><span class="p">,</span> <span class="mi">1560543024</span><span class="p">.</span><span class="mi">2920816</span><span class="p">]</span><span class="err">}</span>
+<span class="n">Use</span> <span class="k">local</span> <span class="n">history</span><span class="p">:</span> <span class="k">True</span>
+<span class="k">Not</span> <span class="k">using</span> <span class="n">item</span>
+<span class="n">Got</span> <span class="n">item</span> <span class="err">{</span><span class="s1">&#39;cwd&#39;</span><span class="p">:</span> <span class="s1">&#39;/home/eddie&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">:</span> <span class="s1">&#39;ls\n&#39;</span><span class="p">,</span> <span class="s1">&#39;rtn&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;ts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1560543021</span><span class="p">.</span><span class="mi">7835386</span><span class="p">,</span> <span class="mi">1560543021</span><span class="p">.</span><span class="mi">8042111</span><span class="p">]</span><span class="err">}</span>
+<span class="n">Use</span> <span class="k">local</span> <span class="n">history</span><span class="p">:</span> <span class="k">True</span>
+<span class="k">Using</span> <span class="n">item</span>
+<span class="n">Got</span> <span class="n">item</span> <span class="err">{</span><span class="s1">&#39;cwd&#39;</span><span class="p">:</span> <span class="s1">&#39;/home/eddie&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">:</span> <span class="s1">&#39;ls\n&#39;</span><span class="p">,</span> <span class="s1">&#39;rtn&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;ts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1560543020</span><span class="p">.</span><span class="mi">0776978</span><span class="p">,</span> <span class="mi">1560543020</span><span class="p">.</span><span class="mi">1177895</span><span class="p">]</span><span class="err">}</span>
+<span class="n">Use</span> <span class="k">local</span> <span class="n">history</span><span class="p">:</span> <span class="k">True</span>
+<span class="k">Using</span> <span class="n">item</span>
+<span class="n">Got</span> <span class="n">item</span> <span class="err">{</span><span class="s1">&#39;cwd&#39;</span><span class="p">:</span> <span class="s1">&#39;/home/eddie/test&#39;</span><span class="p">,</span> <span class="s1">&#39;inp&#39;</span><span class="p">:</span> <span class="s1">&#39;cd test\n&#39;</span><span class="p">,</span> <span class="s1">&#39;rtn&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;ts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1560542986</span><span class="p">.</span><span class="mi">1126633</span><span class="p">,</span> <span class="mi">1560542986</span><span class="p">.</span><span class="mi">1164727</span><span class="p">]</span><span class="err">}</span>
+<span class="n">Use</span> <span class="k">local</span> <span class="n">history</span><span class="p">:</span> <span class="k">True</span>
+<span class="k">Not</span> <span class="k">using</span> <span class="n">item</span>
+</pre></div>
+
+
+<p>My history backend was apparently being used to load existing history strings, and it was only returning those that matched the <code>cwd</code>, which, in a new <code>gnome-terminal</code> for me is <code>/home/eddie</code>. Notice how commands with <code>cwd</code> info that matches <code>/home/eddie</code> are the only history items being used.</p>
+<p>Cool. So I decided to switch to another directory. If things are working as expected, I should be able to enter history commands, go back through the history, and only get commands for this new directory. Before entering any commands in this directory, I shouldn't see any history items!</p>
+<p>But I did. I could scroll back through all the history items that my command output just said were being used. What's more, if I switched to yet another directory, I could access all the commands I'd entered in the current prompt session since opening it.</p>
+<h2>Why???</h2>
+<p>This may be specific to Prompt Toolkit, but I don't know yet. It appears xonsh uses history backends in conjunction with prompt toolkit like this:</p>
+<ol>
+<li>xonsh spins up a new shell instance in <code>xonsh/shell.py</code> when a new shell process is started</li>
+<li>xonsh creates a Prompt Toolkit instance and hands it all the history data up to this point, which, in the case of <code>JsonHistory</code>, is all the history in our JSON history files</li>
+<li>Prompt Toolkit runs the prompt</li>
+<li>Each time a command is entered, Prompt Toolkit feeds this command to the xonsh shell, which appends the command history to the history backend in use</li>
+<li>Indepedently, Prompt Toolkit maintains its own searchable/scrollable record of the history since the Prompt Toolkit instance was created</li>
+<li>The next time a shell is loaded, the previous history is given to Prompt Toolkit from the xonsh history backend.</li>
+</ol>
+<p>Do you see my problem? I had indeed changed what history items are loaded by the history backend, but I hadn't changed anything about what the Prompt Toolkit history mechanism does <em>once a shell is up and running</em>.</p>
+<h2>Where do I go from here?</h2>
+<p>I am going to bring this post to a close since it contains lots of cool info about how xonsh history backends work, but I will pick back up on my own historical exploits in another post.</p>
+    </main>
+<script>
+	(function() {
+		if (window.location.hostname.indexOf('localhost') > -1) {
+			return;
+		}
+
+		var script = document.createElement('script');
+		window.counter = 'https://dinogalactic.goatcounter.com/count'
+		script.async = 1;
+		script.src = '//static.goatcounter.com/count.min.js';
+
+		var ins = document.getElementsByTagName('script')[0];
+		ins.parentNode.insertBefore(script, ins)
+	})();
+</script>  </body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Eddie makes website &emdash; Smart things to say when a production bug arises in software development</title>
+    <link rel="stylesheet" href="./theme/css/typesetter.css" />
+    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Eddie makes website Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/misc.atom.xml" type="application/atom+xml" rel="alternate" title="Eddie makes website Categories Atom Feed" />
+  </head>
+  <body>
+    <header><a href="./" alt="Eddie makes website">Eddie makes website</a></header>
+    <nav>
+        <h1>Navigation</h2>
+        <ul>
+              <li><a href="./pages/about.html">about</a></li>
+              <li><a href="./pages/booksread.html">books</a></li>
+
+              <li><a href="./category/misc.html">misc</a></li>
+              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+        </ul>
+    </nav>
+    <aside>
+        <h1>Tags</h1>
+        <ul>
+            <li><a href="./tag/career.html">career</a></li>
+            <li><a href="./tag/gardening.html">gardening</a></li>
+            <li><a href="./tag/kids.html">kids</a></li>
+            <li><a href="./tag/linux.html">linux</a></li>
+            <li><a href="./tag/parenting.html">parenting</a></li>
+            <li><a href="./tag/project-management.html">project management</a></li>
+            <li><a href="./tag/python.html">python</a></li>
+            <li><a href="./tag/raspi.html">raspi</a></li>
+            <li><a href="./tag/resume.html">resume</a></li>
+            <li><a href="./tag/shell.html">shell</a></li>
+            <li><a href="./tag/software-development.html">software development</a></li>
+            <li><a href="./tag/xonsh.html">xonsh</a></li>
+            <li><a href="./tag/xontribs.html">xontribs</a></li>
+        </ul>
+    </aside>
+    <main>
+<h1>Smart things to say when a production bug arises in software development</h1>
+<p>Today I noticed an issue that was affecting production. Doesn't matter the issue, I don't think, but my supervisor asked some good questions, so I figured I'd document them. This helps me remember what I should do to be a better leader in emergent situations.</p>
+<p>These aren't direct quotes, just summaries of the things he wanted to figure out to help him prioritize.</p>
+<ol>
+<li>Does this relate to some previous or ongoing issue that we know about?</li>
+<li>If so, what do I need to know about it that others on the team already know?</li>
+<li>How does this affect users?</li>
+<li>Do we know how many users are affected, or can we find out?</li>
+<li>If no one has reproduced the issue, could someone make a ticket and spend some short amount of time trying to reproduce it (up to 90 minutes)?</li>
+<li>If we can reproduce it, are there estimates of difficulty on a fix?</li>
+<li>If we were going to deploy it, would anything special be required in that deploy?</li>
+</ol>
+    </main>
+<script>
+	(function() {
+		if (window.location.hostname.indexOf('localhost') > -1) {
+			return;
+		}
+
+		var script = document.createElement('script');
+		window.counter = 'https://dinogalactic.goatcounter.com/count'
+		script.async = 1;
+		script.src = '//static.goatcounter.com/count.min.js';
+
+		var ins = document.getElementsByTagName('script')[0];
+		ins.parentNode.insertBefore(script, ins)
+	})();
+</script>  </body>
+</html>
