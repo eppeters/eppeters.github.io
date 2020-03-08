@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Eddie makes website &emdash; Broccoli, Cabbage, Onions, Basil, and Chamomile</title>
+    <title>Eddie makes website &emdash; Side project idea: WSPRry Pi Transmission Analysis with Espotek Labrador</title>
     <link rel="stylesheet" href="./theme/css/typesetter.css" />
     <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
     <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Eddie makes website Full Atom Feed" />
@@ -41,55 +41,15 @@
         </ul>
     </aside>
     <main>
-<h1>Broccoli, Cabbage, Onions, Basil, and Chamomile</h1>
-<h2>Garden Plan</h2>
-<p><strong>How much of each we want to plant in the garden</strong></p>
-<ul>
-<li>8 Broccoli</li>
-<li>11 Chinese Cabbage</li>
-<li>40 Yellow Onions</li>
-<li>12 Red Onions</li>
-<li>96 Green Onions (table onions)</li>
-<li>24 chamomile</li>
-<li>28 Basil</li>
-</ul>
-<h2>Starting Counts</h2>
-<p><strong>How many we're actually starting</strong></p>
-<ul>
-<li>80 yellow onions and 80 white onions, for a total of 160 onions</li>
-<li>About 40 yellow onions expected to bulb out</li>
-<li>About 40 white onions expected to bulb out</li>
-<li>About 80 onions expected as green onions</li>
-<li>Purchased from Tractor Supply as bulbs, not seeds</li>
-<li>28 Chinese Cabbage</li>
-<li>21 Broccoli</li>
-<li>21 Chamomile</li>
-<li>35 Basil</li>
-</ul>
-<h2>Starting conditions</h2>
-<ul>
-<li>In front of a window</li>
-<li>Big rack, not all gets light at once</li>
-<li>Chamomile &amp; Basil on a heat mat, but not cabbage and broccoli</li>
-</ul>
-<h2>Next Steps</h2>
-<ul>
-<li>Make a cold frame tunnel, probably using <a href="https://www.growveg.com/guides/how-to-set-up-a-low-tunnel-for-cool-season-crops/">these instructions</a></li>
-<li>Set Chinese Cabbage out after last frost</li>
-<li>Fall broccoli and cabbage seedlings should be started about 2 months before
-  first frost</li>
-</ul>
-<h2>Mistakes/Lessons Learned</h2>
-<ul>
-<li>I didn't know enough about onions. I bought both short and long day onions,
-  but found that my zone requires something called intermediate onions, and if
-  it's possible to plant the other types here, I don't know how. So I'd like to
-  learn about that before next year.</li>
-<li>Chinese Cabbage and broccoli say: "Start seeds for transplants 4-6 weeks
-  prior to desired transplanting date... Set the plants in the garden about 4
-  weeks before last frost date in the spring..."</li>
-<li>Next year, start seedlings around Feb 1-Feb 15</li>
-</ul>
+<h1>Side project idea: WSPRry Pi Transmission Analysis with Espotek Labrador</h1>
+<p>Lately I've gotten into ham radio and passed my FCC licensing exams, so I can transmit now, but I don't have a radio. I do have an (unmounted - it's in a drawer) antenna, so I could transmit if I had a device to do so.</p>
+<p>I am considering building a <a href="https://en.wikipedia.org/wiki/WSPR_(amateur_radio_software)">WSPR</a> beacon since I have most of the materials. This would include installing <a href="https://github.com/JamesP6000/WsprryPi">WSPRry Pi</a> on one of my Rasperry Pis and <a href="http://www.gqrp.com/harmonic_filters.pdf">building a low-pass filter</a> to keep from transmitting on illegal frequencies.</p>
+<p>But before I have the components for a low-pass filter, I can get used to my new <a href="https://github.com/EspoTek/Labrador">Espotek Labrador</a> by analysing the outputs from the WSPRry Pi on the Pi's GPIO pins without transmitting. How neat!</p>
+<p>Of particular interest to me are these questions:
+* Why does the WsprryPi generate illegal harmonics?
+* Can you observe the harmonics and the fundamental frequency at the same time using an EspoTek Labrador? Can you do that with just any oscilloscope?
+  * My hypothesis is that you can't do this with the Labrador or a standard oscilloscope because the signals will be added together and displayed as a square wave, since a square wave is the result of adding odd harmonics with the fundamental frequency, and an oscilloscope displays signals in the time domain, not the frequency domain.
+* If my hypothesis is correct, how would adding a low pass filter, which attenuates signals above a particular frequency, allow a square wave to be transmitted? Wouldn't it attenuate the higher frequency harmonics needed to produce the square wave in the first place? In other words, if a square wave is the combination of odd harmonics, and we eliminate higher frequency harmonics, won't we be removing the components that make this signal a square wave?</p>
     </main>
 <script>
 	(function() {
