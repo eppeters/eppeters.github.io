@@ -45,11 +45,13 @@
 <p>Lately I've gotten into ham radio and passed my FCC licensing exams, so I can transmit now, but I don't have a radio. I do have an (unmounted - it's in a drawer) antenna, so I could transmit if I had a device to do so.</p>
 <p>I am considering building a <a href="https://en.wikipedia.org/wiki/WSPR_(amateur_radio_software)">WSPR</a> beacon since I have most of the materials. This would include installing <a href="https://github.com/JamesP6000/WsprryPi">WSPRry Pi</a> on one of my Rasperry Pis and <a href="http://www.gqrp.com/harmonic_filters.pdf">building a low-pass filter</a> to keep from transmitting on illegal frequencies.</p>
 <p>But before I have the components for a low-pass filter, I can get used to my new <a href="https://github.com/EspoTek/Labrador">Espotek Labrador</a> by analysing the outputs from the WSPRry Pi on the Pi's GPIO pins without transmitting. How neat!</p>
-<p>Of particular interest to me are these questions:
-* Why does the WsprryPi generate illegal harmonics?
-* Can you observe the harmonics and the fundamental frequency at the same time using an EspoTek Labrador? Can you do that with just any oscilloscope?
-  * My hypothesis is that you can't do this with the Labrador or a standard oscilloscope because the signals will be added together and displayed as a square wave, since a square wave is the result of adding odd harmonics with the fundamental frequency, and an oscilloscope displays signals in the time domain, not the frequency domain.
-* If my hypothesis is correct, how would adding a low pass filter, which attenuates signals above a particular frequency, allow a square wave to be transmitted? Wouldn't it attenuate the higher frequency harmonics needed to produce the square wave in the first place? In other words, if a square wave is the combination of odd harmonics, and we eliminate higher frequency harmonics, won't we be removing the components that make this signal a square wave?</p>
+<p>Of particular interest to me are these questions:</p>
+<ul>
+<li>Why does the WsprryPi generate illegal harmonics?</li>
+<li>Can you observe the harmonics and the fundamental frequency at the same time using an EspoTek Labrador? Can you do that with just any oscilloscope?</li>
+<li>My hypothesis is that you can't do this with the Labrador or a standard oscilloscope because the signals will be added together and displayed as a square wave, since a square wave is the result of adding odd harmonics with the fundamental frequency, and an oscilloscope displays signals in the time domain, not the frequency domain.</li>
+<li>If my hypothesis is correct, how would adding a low pass filter, which attenuates signals above a particular frequency, allow a square wave to be transmitted? Wouldn't it attenuate the higher frequency harmonics needed to produce the square wave in the first place? In other words, if a square wave is the combination of odd harmonics, and we eliminate higher frequency harmonics, won't we be removing the components that make this signal a square wave?</li>
+</ul>
     </main>
 <script>
 	(function() {
