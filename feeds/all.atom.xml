@@ -1,5 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Eddie makes website</title><link href="https://www.dinogalactic.com/" rel="alternate"></link><link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="self"></link><id>https://www.dinogalactic.com/</id><updated>2020-03-08T16:50:00-04:00</updated><entry><title>Side project idea: WSPRry Pi Transmission Analysis with Espotek Labrador</title><link href="https://www.dinogalactic.com/side-project-idea-wsprry-pi-transmission-analysis-with-espotek-labrador.html" rel="alternate"></link><published>2020-03-08T16:50:00-04:00</published><updated>2020-03-08T16:50:00-04:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-03-08:/side-project-idea-wsprry-pi-transmission-analysis-with-espotek-labrador.html</id><summary type="html">&lt;p&gt;Lately I've gotten into ham radio and passed my FCC licensing exams, so I can transmit now, but I don't have a radio. I do have an (unmounted - it's in a drawer) antenna, so I could transmit if I had a device to do so.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Eddie makes website</title><link href="https://www.dinogalactic.com/" rel="alternate"></link><link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="self"></link><id>https://www.dinogalactic.com/</id><updated>2020-03-22T06:00:00-04:00</updated><entry><title>Debugging an Inteference Problem on My ubitx v6</title><link href="https://www.dinogalactic.com/debugging-an-inteference-problem-on-my-ubitx-v6.html" rel="alternate"></link><published>2020-03-22T06:00:00-04:00</published><updated>2020-03-22T06:00:00-04:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-03-22:/debugging-an-inteference-problem-on-my-ubitx-v6.html</id><summary type="html">&lt;p&gt;I got my ubitx v6 recently from
+&lt;a href="https://www.hfsignals.com/index.php/ubitx-v6/"&gt;hfsignals&lt;/a&gt; and hooked it up to
+a 20m/40m trapped dipole from &lt;a href="http://qrpkits.com/dualbanddipole.html"&gt;Pacific
+Antenna&lt;/a&gt;, mounted about 30 ft off the
+ground as an inverted vee.&lt;/p&gt;
+&lt;p&gt;So far I've made no contacts and been able to hear only one half of an SSB
+conversation …&lt;/p&gt;</summary><content type="html">&lt;p&gt;I got my ubitx v6 recently from
+&lt;a href="https://www.hfsignals.com/index.php/ubitx-v6/"&gt;hfsignals&lt;/a&gt; and hooked it up to
+a 20m/40m trapped dipole from &lt;a href="http://qrpkits.com/dualbanddipole.html"&gt;Pacific
+Antenna&lt;/a&gt;, mounted about 30 ft off the
+ground as an inverted vee.&lt;/p&gt;
+&lt;p&gt;So far I've made no contacts and been able to hear only one half of an SSB
+conversation that sounded like it was coming from somewhere near me in
+Virginia. I've been able to hear some digital modes and very small bursts (a
+couple of letters) of CW on occasion.&lt;/p&gt;
+&lt;p&gt;Unfortunately everywhere I tune on my radio sounds like intense static garbage
+- a problem I'm assuming for now is QRM that can be removed. In other words, I
+don't think it's coming from inside the radio. (I have a couple of reasons for
+this - mainly that when I unplug the antenna or put a large resistive load on
+the antenna connector, the static is gone.)&lt;/p&gt;
+&lt;h2&gt;Symptoms&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Manifests as a crackly static&lt;/li&gt;
+&lt;li&gt;Occurs across all bands&lt;/li&gt;
+&lt;li&gt;Has so far only allowed geographically close reception (possibly indicating
+  desensitization of signals that aren't extremely strong, or maybe my antenna
+  is accidentally an NVIS antenna?)&lt;/li&gt;
+&lt;li&gt;Gets much, much more aggressive (louder) as I go down in frequency&lt;/li&gt;
+&lt;li&gt;Does not improve when all devices in the house are off except the radio's
+  switching 12V power supply - I haven't yet tried on batteries alone&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Possible causes&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;RFI from the 12V switching power supply I got on
+  &lt;a href="https://www.amazon.com/gp/product/B01461MOGQ/"&gt;Amazon&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;RFI from a neighbor's electronic device(s)&lt;/li&gt;
+&lt;li&gt;Power line interference&lt;/li&gt;
+&lt;li&gt;Some form of coupling or common mode current (I'm way out of my depth here in
+  terms of understanding, but my station is ungrounded and I am not using a
+  balun on my inverted vee)&lt;/li&gt;
+&lt;li&gt;Some problem caused by an incorrectly installed BNC connector on my coax
+  cable. I feel pretty OK with my stripping and crimping job, but these were a
+  couple of the first BNC connectors I ever crimped onto the end of a coax
+  cable, so maybe I caused some problem?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Video of interference&lt;/h2&gt;
+&lt;p&gt;Below is a video with audio of the interference. I switch across the bands to
+show that the interference is extremely wide banded.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://www.youtube.com/watch?v=dR2Hp0X5kww"&gt;https://www.youtube.com/watch?v=dR2Hp0X5kww&lt;/a&gt;&lt;/p&gt;
+&lt;h2&gt;Interesting detail&lt;/h2&gt;
+&lt;p&gt;If I connect an alligator clip from a 160 foot piece of RG8X cable I have lying
+in a coil nearby, the static gets much more intense. Not sure if this could be
+a clue to what the problem is, but if so, I have no idea how.&lt;/p&gt;
+&lt;h2&gt;How I Fixed It&lt;/h2&gt;
+&lt;p&gt;I didn't yet, but I did figure out what was causing the problem. I realized
+that the last step to rule out my own house's devices from the list of possible
+causes was to run the ubitx on battery power with all my home power turned off.
+I didn't have a 12V battery or battery pack, so I wired one up using 8 alkaline AA batteries I had lying around, and voila - no
+static whatsoever. Interestingly after play with the radio for a while, I did
+notice that the cheap LED grow lights I use for my tomatoes and peppers create
+strong interference, but they're close to the radio and easy to turn off
+temporarily.&lt;/p&gt;
+&lt;p&gt;After eliminating the RFI, I immediately heard the Russian station &lt;a href="https://www.qrz.com/db/R2OA"&gt;R2OA&lt;/a&gt; coming through on 14.203 MHz SSB during the &lt;a href="http://www.rdxc.org/asp/pages/rulesg.asp"&gt;Russian DX contest&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Of course, some AAs from the store are going to last less than an hour. My long-term solution to the switching power supply issue is to buy one made for radio use, like &lt;a href="https://www.mfjenterprises.com/Product.php?productid=MFJ-4225MV"&gt;this one by MFJ&lt;/a&gt;.&lt;/p&gt;</content></entry><entry><title>Side project idea: WSPRry Pi Transmission Analysis with Espotek Labrador</title><link href="https://www.dinogalactic.com/side-project-idea-wsprry-pi-transmission-analysis-with-espotek-labrador.html" rel="alternate"></link><published>2020-03-08T16:50:00-04:00</published><updated>2020-03-08T16:50:00-04:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-03-08:/side-project-idea-wsprry-pi-transmission-analysis-with-espotek-labrador.html</id><summary type="html">&lt;p&gt;Lately I've gotten into ham radio and passed my FCC licensing exams, so I can transmit now, but I don't have a radio. I do have an (unmounted - it's in a drawer) antenna, so I could transmit if I had a device to do so.&lt;/p&gt;
 &lt;p&gt;I am considering building a …&lt;/p&gt;</summary><content type="html">&lt;p&gt;Lately I've gotten into ham radio and passed my FCC licensing exams, so I can transmit now, but I don't have a radio. I do have an (unmounted - it's in a drawer) antenna, so I could transmit if I had a device to do so.&lt;/p&gt;
 &lt;p&gt;I am considering building a &lt;a href="https://en.wikipedia.org/wiki/WSPR_(amateur_radio_software)"&gt;WSPR&lt;/a&gt; beacon since I have most of the materials. This would include installing &lt;a href="https://github.com/JamesP6000/WsprryPi"&gt;WSPRry Pi&lt;/a&gt; on one of my Rasperry Pis and &lt;a href="http://www.gqrp.com/harmonic_filters.pdf"&gt;building a low-pass filter&lt;/a&gt; to keep from transmitting on illegal frequencies.&lt;/p&gt;
 &lt;p&gt;But before I have the components for a low-pass filter, I can get used to my new &lt;a href="https://github.com/EspoTek/Labrador"&gt;Espotek Labrador&lt;/a&gt; by analysing the outputs from the WSPRry Pi on the Pi's GPIO pins without transmitting. How neat!&lt;/p&gt;
