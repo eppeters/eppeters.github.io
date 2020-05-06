@@ -189,7 +189,10 @@ aside {
   margin-right: auto;
 }
 /* If we have sufficient width to put stuff on the sides... */
-@media (min-width: 60rem) {
+@media (min-width: 65rem) {
+  main {
+    float: left;
+  }
   aside,
   nav {
     margin-top: 0;
