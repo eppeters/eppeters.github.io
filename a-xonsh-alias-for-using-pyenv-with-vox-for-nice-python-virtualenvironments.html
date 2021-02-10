@@ -1,14 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <title>Eddie makes website &mdash; A xonsh alias for using pyenv with vox for nice Python virtualenvironments</title>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; A xonsh alias for using pyenv with vox for nice Python virtualenvironments</title>
+    <!-- Primary Meta Tags -->
+  <meta name="title" content="dinogalactic &mdash; A xonsh alias for using pyenv with vox for nice Python virtualenvironments">
+    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.dinogalactic.com/">
+    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="og:image" content="">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.dinogalactic.com/">
+    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="twitter:image" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="./theme/css/typesetter.css" />
     <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
-    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Eddie makes website Full Atom Feed" />
-    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="Eddie makes website Categories Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
   </head>
   <body>
-    <header><a href="./" alt="Eddie makes website">Eddie makes website</a></header>
+    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
     <nav>
         <h1>Navigation</h2>
         <ul>
@@ -25,8 +44,8 @@
 <p>So, one thing I wanted to do is have <code>vox</code> use my <code>pyenv</code>-detected <code>python</code> bin whenver I created new virtualenvironments, if I didn't specify an override <code>python</code> bin. In other words, I wanted stuff like the <code>.python-version</code> file and the <code>pyenv shell</code> command to be respected by <code>vox</code> without adding all that functionality to <code>vox</code> proper. This is probably a pretty specific use case, though if more people need it, lmk!</p>
 <p>I came up with an alias that wraps the original <code>vox</code> alias (that's how the <code>vox</code> command is loaded into the environment, as an alias).</p>
 <p>Before I override it, I save the previous <code>vox</code> alias in a variable - the <code>vox</code> alias normally just maps to a callable, so I saved the callable. This is because I want to call the previous <code>vox</code> functionality inside of my new alias, which I am naming <code>'vox'</code>, and I would end up with unwanted recursion if I called my new alias function from inside itself.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">normal_vox</span> <span class="o">=</span> <span class="n">aliases</span><span class="p">[</span><span class="s1">&#39;vox&#39;</span><span class="p">]</span>
-</pre></div>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">normal_vox</span> <span class="o">=</span> <span class="n">aliases</span><span class="p">[</span><span class="s1">&#39;vox&#39;</span><span class="p">]</span>
+</code></pre></div>
 </td></tr></table>
 
 <p>Next I define a function that does a simple check for whether I had specified an interpreter in the arguments, and if not, it prepends the <code>pyenv</code>-detected <code>python</code> bin to the argument list.</p>
@@ -39,23 +58,23 @@
  7
  8
  9
-10</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">pyenv_vox</span><span class="p">(</span><span class="n">argument_list</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+10</pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">pyenv_vox</span><span class="p">(</span><span class="n">argument_list</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Use pyenv-detected python to create environments if no other interpreter is specified.&quot;&quot;&quot;</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Using alias for vox in .xonshrc&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Using alias for vox in .xonshrc&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">argument_list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">argument_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;new&#39;</span> \
             <span class="ow">and</span> <span class="s1">&#39;--interpreter&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">argument_list</span> \
             <span class="ow">and</span> <span class="s1">&#39;-p&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">argument_list</span><span class="p">:</span>
             <span class="n">python</span> <span class="o">=</span> <span class="err">$</span><span class="p">(</span><span class="n">pyenv</span> <span class="n">which</span> <span class="n">python</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-            <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Using pyenv-detected python to create new environment: {python}&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Using pyenv-detected python to create new environment: </span><span class="si">{</span><span class="n">python</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
             <span class="n">argument_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;new&#39;</span><span class="p">,</span> <span class="s1">&#39;--interpreter&#39;</span><span class="p">,</span> <span class="n">python</span><span class="p">]</span> <span class="o">+</span> <span class="n">argument_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
     <span class="k">return</span> <span class="n">normal_vox</span><span class="p">(</span><span class="n">argument_list</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</pre></div>
+</code></pre></div>
 </td></tr></table>
 
 <p>Regardless of whether that modification is made to the argument list, it calls the original <code>vox</code> alias with the argument list, so other <code>vox</code> commands effectively pass through untouched.</p>
 <p>Finally, I set <code>aliases['vox']</code> to this new alias function.</p>
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">aliases</span><span class="p">[</span><span class="s1">&#39;vox&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pyenv_vox</span>
-</pre></div>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><span class="n">aliases</span><span class="p">[</span><span class="s1">&#39;vox&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pyenv_vox</span>
+</code></pre></div>
 </td></tr></table>
 
 <p>And, that's it. With the <code>print()</code> statements included in the alias function, you can see what happens.</p>
@@ -64,12 +83,12 @@
 2
 3
 4
-5</pre></div></td><td class="code"><div class="highlight"><pre><span></span>eddie@eddie-ubuntu ~/website master $ vox new excitement
+5</pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>eddie@eddie-ubuntu ~/website master $ vox new excitement
 Using <span class="nb">alias</span> <span class="k">for</span> vox in .xonshrc
 Using pyenv-detected python to create new environment: /home/eddie/.pyenv/versions/3.7.3/bin/python
 Creating environment...
 Environment <span class="s1">&#39;excitement&#39;</span> created. Activate it with <span class="s2">&quot;vox activate excitement&quot;</span>.
-</pre></div>
+</code></pre></div>
 </td></tr></table>
 
 <p>Other commands are untouched by the alias - well, at least not substantively. The logging still lets you know you're using the alias.</p>
@@ -78,13 +97,13 @@ Environment <span class="s1">&#39;excitement&#39;</span> created. Activate it wi
 3
 4
 5
-6</pre></div></td><td class="code"><div class="highlight"><pre><span></span>eddie@eddie-ubuntu ~/website master $ vox ls
+6</pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>eddie@eddie-ubuntu ~/website master $ vox ls
 Using <span class="nb">alias</span> <span class="k">for</span> vox in .xonshrc
 Available environments:
 butter
 excitement
 website
-</pre></div>
+</code></pre></div>
 </td></tr></table>
 
 <p>You can set up pyenv to use a specific python, and that python will be used for the virtualenv:</p>
@@ -125,7 +144,7 @@ website
 35
 36
 37
-38</pre></div></td><td class="code"><div class="highlight"><pre><span></span>eddie@eddie-ubuntu ~ <span class="o">[</span><span class="m">1</span><span class="o">]</span>$ pyenv <span class="nb">local</span> <span class="m">3</span>.7.3
+38</pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>eddie@eddie-ubuntu ~ <span class="o">[</span><span class="m">1</span><span class="o">]</span>$ pyenv <span class="nb">local</span> <span class="m">3</span>.7.3
 eddie@eddie-ubuntu ~ $ python --version
 Python <span class="m">3</span>.7.3
 eddie@eddie-ubuntu ~ $ pyenv version
@@ -163,7 +182,7 @@ Activated <span class="s2">&quot;demo-3.7.3&quot;</span>.
 
 <span class="o">(</span>demo-3.7.3<span class="o">)</span> eddie@eddie-ubuntu ~ $ python --version
 Python <span class="m">3</span>.7.3
-</pre></div>
+</code></pre></div>
 </td></tr></table>
 
 <p>You can still override pyenv's current python when creating virtualenvs:</p>
@@ -187,7 +206,7 @@ Python <span class="m">3</span>.7.3
 18
 19
 20
-21</pre></div></td><td class="code"><div class="highlight"><pre><span></span>eddie@eddie-ubuntu ~ $ pyenv <span class="nb">local</span> <span class="m">2</span>.7.15
+21</pre></div></td><td class="code"><div class="highlight"><pre><span></span><code>eddie@eddie-ubuntu ~ $ pyenv <span class="nb">local</span> <span class="m">2</span>.7.15
 eddie@eddie-ubuntu ~ $ python --version
 Python <span class="m">2</span>.7.15
 eddie@eddie-ubuntu ~ <span class="o">[</span><span class="m">2</span><span class="o">]</span>$ vox new -p /usr/bin/python demo-system-python
@@ -208,7 +227,7 @@ Using <span class="nb">alias</span> <span class="k">for</span> vox in .xonshrc
 Deactivated <span class="s2">&quot;demo-system-python&quot;</span>.
 eddie@eddie-ubuntu ~ $ python --version
 Python <span class="m">2</span>.7.15
-</pre></div>
+</code></pre></div>
 </td></tr></table>
 
 <p>I'll upload the code sometime, and I'll update this page with it, hopefully, but you've got what you need :)</p>

@@ -1,14 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <title>Eddie makes website &mdash; What Have I Actually Done at My Current Job?</title>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; What Have I Actually Done at My Current Job?</title>
+    <!-- Primary Meta Tags -->
+  <meta name="title" content="dinogalactic &mdash; What Have I Actually Done at My Current Job?">
+    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.dinogalactic.com/">
+    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="og:image" content="">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.dinogalactic.com/">
+    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="twitter:image" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="./theme/css/typesetter.css" />
     <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
-    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Eddie makes website Full Atom Feed" />
-    <link href="https://www.dinogalactic.com/feeds/misc.atom.xml" type="application/atom+xml" rel="alternate" title="Eddie makes website Categories Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/misc.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
   </head>
   <body>
-    <header><a href="./" alt="Eddie makes website">Eddie makes website</a></header>
+    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
     <nav>
         <h1>Navigation</h2>
         <ul>
@@ -28,12 +47,20 @@ integrations at Truth Initiative Innovations.</p>
 remembered things, and maybe even some of the morer remembered things?</p>
 <p>When it's time to sit down in front of the resume etching machine, I will be ready.</p>
 <ul>
+<li>On 10-14-2020, my dev lead/acting supervisor said:<blockquote>
+<p>Thank you for handling the deploy stuff and the details for [client]
+You very consistently handle this sort of “getting the end of a project
+wrangled and live” well, and it’s been a huge load off knowing you have it</p>
+</blockquote>
+</li>
 <li>I managed the Omniture Integrations at Truth Initiative Innovations. This
   includes classifying variables, being the person who knows the stuff about
   how Omniture works on the team (e.g. I was one of the two people who could
   remind people what evars and sprops were), and I'd take point on
   troubleshooting wiley Omniture bugs (like - why wasn't some registration data
   getting associated with a "person" in Jive, yet other stuff apparently was?).</li>
+<li>At one point, I created a webhook-based system to receive and report page view
+    events to external partners who were paying for that data.</li>
 <li>For a long while, our servers were locking up because of blocking connections
   to our centralized (cloud) logging provider, and when the server came back
   online (usually after a hard reboot through the console at the datacenter),
@@ -67,6 +94,9 @@ remembered things, and maybe even some of the morer remembered things?</p>
   AWS EC2/RDS with Ansible and Jenkins as well as Heroku and Heroku CI. Also
   built development infra on Docker (with and without Docker Compose) and
   Vagrant with Ansible.</li>
+<li>Architected a move from managed multi-server, multi-app VPS hosting to AWS,
+  adding load balancing into the mix for the first time for the application.
+  Automated all AWS infrastructure creation/management in Ansible.</li>
 <li>Designed a test interface for message library admins to simulate user
   experiences so they could gain confidence that their text messaging programs
   would work as expected for various users up to 90 days in the future.</li>

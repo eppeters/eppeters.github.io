@@ -2,9 +2,9 @@
 <html>
   <head>
     <meta charset="UTF-8">
-      <title>dinogalactic &mdash; Powering a Ham Radio with a Laptop Battery</title>
+      <title>dinogalactic &mdash; [Pic] Early potatoes 2020</title>
     <!-- Primary Meta Tags -->
-  <meta name="title" content="dinogalactic &mdash; Powering a Ham Radio with a Laptop Battery">
+  <meta name="title" content="dinogalactic &mdash; [Pic] Early potatoes 2020">
     <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
 
     <!-- Open Graph / Facebook -->
@@ -39,34 +39,8 @@
         </ul>
     </nav>
     <main>
-<h1>Powering a Ham Radio with a Laptop Battery</h1>
-<p>I recently had <a href="./debugging-an-inteference-problem-on-my-ubitx-v6.html">some bad luck with a cheap 12V power supply</a> with my <a href="https://www.hfsignals.com/index.php/ubitx-v6/">uBitx v6</a>. In short, the supply was extremely noisy across all the RF bands I wanted to use. I had said in that other post that I would buy a better power supply suitable for RF, but I don't believe you should do that when you can hack something together using parts you already have, especially when just starting out.</p>
-<p>I poached the working Lithium Ion battery from the very Dell Lattitude E5540 laptop that I'm writing this on, and everything is working perfectly.</p>
-<p>Here is how I did that.</p>
-<h2>Find a decent approximation of the Laptop's pinout</h2>
-<p>On <a href="https://www.laptop-junction.com/toast/content/inside-dell-d610-battery-connector-pinout-and-signal-timing">this page</a> I found the basic info I needed to hook up to my Laptop battery.</p>
-<p>Crucially, I found this info that would work if my battery pinout wasn't too different from the one in the picture. Mine had 9 pins, just like the one on that site, so chances were decent the pinout was the same or similar.</p>
-<p>The 3 most important facts were:</p>
-<ol>
-<li>the left and rightmost two pairs of pins need to be shorted as two pairs (one short on each side, so the four pins effectively become two wires)</li>
-<li>one of the pairs is ground (-), and the other pair is (+)</li>
-<li>one of the pins in the middle needs to be shorted to ground </li>
-</ol>
-<h2>Wire the battery up to a breadboard and onto the radio</h2>
-<p>I just had to figure out which pin on my battery had to be shorted to ground to turn the battery on, since I got no voltage by simple shorting the pairs of pins on the (+) and (-) sides. Finally, I realized from the above site's pin list that my pin 6 might be something called <code>SYSPRES</code>, probably meaning <code>SYSTEM PRESENT</code>, or in human terms "This battery is not being shorted accidentally in someone's purse by their earrings - it's plugged into a laptop." Once I connected pin 6 to ground, I got a little over 12V out between (+) and (-). For safety, I added a toggle switch between pin 6 and ground.</p>
-<figure>
-  <img alt="Annotated drawing of the battery wireup job I did." src="./images/annotated_dell_laptop_battery.jpg" />
-  <figcaption>The radio turned on with zero noise - no loud helicopter blade sounds.</figcaption>
-</figure>
-
-<h2>Turn it on</h2>
-<figure>
-<img alt="My first HF station, a uBitx v6, powered by the battery power source I hacked together." src="./images/first_hf_station.jpg" />
-  <figcaption>Here it is, turned on. Yes, right now my uBitx is in a cardboard box. Stay tuned for a future project where it might live in a nice wooden box.</figcaption>
-</figure>
-
-<h2>Profit</h2>
-<p>I will keep going with this setup as long as I can. It's working, is noiseless, is free for me, and since I don't take my laptop anywhere really, is not inconvenient yet.</p>
+<h1>[Pic] Early potatoes 2020</h1>
+<p><img alt="Early potatoes in my hand" src="./images/early_potatoes.jpg"></p>
     </main>
     <aside>
         <h1>Tags</h1>

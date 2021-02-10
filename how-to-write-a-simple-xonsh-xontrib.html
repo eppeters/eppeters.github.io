@@ -1,14 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <title>Eddie makes website &mdash; How to Write a simple xonsh xontrib</title>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; How to Write a simple xonsh xontrib</title>
+    <!-- Primary Meta Tags -->
+  <meta name="title" content="dinogalactic &mdash; How to Write a simple xonsh xontrib">
+    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.dinogalactic.com/">
+    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="og:image" content="">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.dinogalactic.com/">
+    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="twitter:image" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="./theme/css/typesetter.css" />
     <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
-    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Eddie makes website Full Atom Feed" />
-    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="Eddie makes website Categories Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
   </head>
   <body>
-    <header><a href="./" alt="Eddie makes website">Eddie makes website</a></header>
+    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
     <nav>
         <h1>Navigation</h2>
         <ul>
@@ -85,28 +104,28 @@ the <code>xontrib.myxontribname</code> module as a xontrib.</p>
 <h3>xontrib "Hello World!"</h3>
 <p>Here's a trivial xontrib "Hello World!" example using these concepts.</p>
 <p>My first xontrib, called <code>hello_world</code> has the following directory structure:</p>
-<div class="highlight"><pre><span></span><span class="nv">@eddie</span><span class="o">-</span><span class="n">ubuntu</span><span class="w"> </span><span class="o">~/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">hello</span><span class="o">-</span><span class="n">world</span><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">tree</span><span class="w"></span>
+<div class="highlight"><pre><span></span><code><span class="nv">@eddie</span><span class="o">-</span><span class="n">ubuntu</span><span class="w"> </span><span class="o">~/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">hello</span><span class="o">-</span><span class="n">world</span><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">tree</span><span class="w"></span>
 <span class="p">.</span><span class="w"></span>
 <span class="err">└──</span><span class="w"> </span><span class="n">xontrib</span><span class="w"></span>
 <span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">hello_world</span><span class="p">.</span><span class="n">py</span><span class="w"></span>
 
 <span class="mi">1</span><span class="w"> </span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">file</span><span class="w"></span>
-</pre></div>
+</code></pre></div>
 
 
 <p>I created this by running the following in xonsh inside the <code>xontrib-hello-world</code> directory:</p>
-<div class="highlight"><pre><span></span><span class="n">eddie</span><span class="nv">@eddie</span><span class="o">-</span><span class="n">ubuntu</span><span class="w"> </span><span class="o">~/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">hello</span><span class="o">-</span><span class="n">world</span><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">mkdir</span><span class="w"> </span><span class="n">xontrib</span><span class="w"></span>
-<span class="n">eddie</span><span class="nv">@eddie</span><span class="o">-</span><span class="n">ubuntu</span><span class="w"> </span><span class="o">~/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">hello</span><span class="o">-</span><span class="n">world</span><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">echo</span><span class="w"> </span><span class="ss">&quot;print(&#39;Hello World!&#39;)&quot;</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">xontrib</span><span class="o">/</span><span class="n">hello_world</span><span class="p">.</span><span class="n">py</span><span class="w"></span>
-</pre></div>
+<div class="highlight"><pre><span></span><code><span class="err">eddie@eddie-ubuntu ~/source/xontrib-hello-world $ mkdir xontrib</span>
+<span class="err">eddie@eddie-ubuntu ~/source/xontrib-hello-world $ echo &quot;print(&#39;Hello World!&#39;)&quot; &gt; xontrib/hello_world.py</span>
+</code></pre></div>
 
 
 <p>Now, I want to load this xontrib, right? Let's see if xonsh has picked it up yet:</p>
-<div class="highlight"><pre><span></span><span class="n">eddie</span><span class="nv">@eddie</span><span class="o">-</span><span class="n">ubuntu</span><span class="w"> </span><span class="o">~/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">hello</span><span class="o">-</span><span class="n">world</span><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">xontrib</span><span class="w"> </span><span class="k">load</span><span class="w"> </span><span class="n">hello_world</span><span class="w"></span>
-<span class="n">The</span><span class="w"> </span><span class="n">following</span><span class="w"> </span><span class="n">xontribs</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">enabled</span><span class="w"> </span><span class="n">but</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="nl">installed</span><span class="p">:</span><span class="w"></span>
-<span class="w">   </span><span class="n">hello_world</span><span class="w"></span>
-<span class="k">To</span><span class="w"> </span><span class="n">install</span><span class="w"> </span><span class="n">them</span><span class="w"> </span><span class="n">run</span><span class="w"></span>
-<span class="w">    </span><span class="n">xpip</span><span class="w"> </span><span class="n">install</span><span class="w"></span>
-</pre></div>
+<div class="highlight"><pre><span></span><code><span class="err">eddie@eddie-ubuntu ~/source/xontrib-hello-world $ xontrib load hello_world</span>
+<span class="err">The following xontribs are enabled but not installed:</span>
+<span class="err">   hello_world</span>
+<span class="err">To install them run</span>
+<span class="err">    xpip install</span>
+</code></pre></div>
 
 
 <p>Hmm, this is a strange message, but it all makes sense when considering (1)
@@ -131,7 +150,7 @@ the <code>xontrib</code> package. This next step will do that.</p>
 its containing directory to the <code>sys.path</code> global, so let's do that, picking up
 immediately where we left off before with the "The following xontribs are
 enabled but installed..." message:</p>
-<div class="highlight"><pre><span></span><span class="n">eddie</span><span class="nd">@eddie</span><span class="o">-</span><span class="n">ubuntu</span> <span class="o">~/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">hello</span><span class="o">-</span><span class="n">world</span> <span class="err">$</span> <span class="n">xontrib</span> <span class="n">load</span> <span class="n">hello_world</span>
+<div class="highlight"><pre><span></span><code><span class="n">eddie</span><span class="nd">@eddie</span><span class="o">-</span><span class="n">ubuntu</span> <span class="o">~/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">hello</span><span class="o">-</span><span class="n">world</span> <span class="err">$</span> <span class="n">xontrib</span> <span class="n">load</span> <span class="n">hello_world</span>
 <span class="n">The</span> <span class="n">following</span> <span class="n">xontribs</span> <span class="n">are</span> <span class="n">enabled</span> <span class="n">but</span> <span class="ow">not</span> <span class="n">installed</span><span class="p">:</span>
    <span class="n">hello_world</span>
 <span class="n">To</span> <span class="n">install</span> <span class="n">them</span> <span class="n">run</span>
@@ -164,7 +183,7 @@ enabled but installed..." message:</p>
  <span class="s1">&#39;/home/eddie/source/xontrib-hello-world&#39;</span><span class="p">]</span>
 <span class="n">eddie</span><span class="nd">@eddie</span><span class="o">-</span><span class="n">ubuntu</span> <span class="o">~/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">hello</span><span class="o">-</span><span class="n">world</span> <span class="err">$</span> <span class="n">xontrib</span> <span class="n">load</span> <span class="n">hello_world</span>
 <span class="n">Hello</span> <span class="n">World</span><span class="err">!</span>
-</pre></div>
+</code></pre></div>
 
 
 <p>After adding the current directory, which contains the aforementioned
@@ -190,7 +209,7 @@ zsh</a>, which I used for a
 long time in my <code>zsh</code> configuration and now miss dearly. The following steps
 should be applicable regardless of the goal of the xontrib you are creating.</p>
 <p>This is the <code>setup.py</code> configuration I ended up with for this xontrib:</p>
-<div class="highlight"><pre><span></span><span class="n">xontrib</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span>
+<div class="highlight"><pre><span></span><code><span class="n">xontrib</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span>
 <span class="o">-----</span>
 <span class="n">Per</span><span class="o">-</span><span class="n">directory</span> <span class="n">history</span> <span class="k">for</span> <span class="n">xonsh</span><span class="p">,</span> <span class="n">like</span> <span class="n">zsh</span><span class="s1">&#39;s</span>
 <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jimhester</span><span class="o">/</span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span>
@@ -227,7 +246,7 @@ should be applicable regardless of the goal of the xontrib you are creating.</p>
 <span class="s2">        &#39;Topic :: System :: System Shells&#39;,</span>
 <span class="s2">    ]</span>
 <span class="s2">)</span>
-</pre></div>
+</code></pre></div>
 
 
 <p>xontrib packages have a particular layout that requires us to write some
@@ -241,10 +260,10 @@ most interesting (read: least obvious) of these informational pieces is the
 <code>classifiers</code> list, which you can find out more about on <a href="https://pypi.org/classifiers/">PyPI's classifiers
 page</a>.</p>
 <p>The following triplet effectively tells <code>setuptools</code> to do everything we did manually in Step 1 above:</p>
-<div class="highlight"><pre><span></span>    <span class="n">packages</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;xontrib&#39;</span><span class="p">],</span>
-    <span class="n">package_dir</span><span class="o">=</span><span class="err">{</span><span class="s1">&#39;xontrib&#39;</span><span class="p">:</span> <span class="s1">&#39;xontrib&#39;</span><span class="err">}</span><span class="p">,</span>
-    <span class="n">package_data</span><span class="o">=</span><span class="err">{</span><span class="s1">&#39;xontrib&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;*.xsh&#39;</span><span class="p">]</span><span class="err">}</span><span class="p">,</span>
-</pre></div>
+<div class="highlight"><pre><span></span><code><span class="err">    packages=[&#39;xontrib&#39;],</span>
+<span class="err">    package_dir={&#39;xontrib&#39;: &#39;xontrib&#39;},</span>
+<span class="err">    package_data={&#39;xontrib&#39;: [&#39;*.xsh&#39;]},</span>
+</code></pre></div>
 
 
 <p><code>packages</code> says that this package will provide a package named <code>xontrib</code>,
@@ -263,9 +282,9 @@ alongside the other installed xontribs' <code>.py</code> and <code>.xsh</code> f
 <p>Have a look at the
 <code>xontrib/</code> directory inside my <code>xonsh</code> virtualenv, for instance, which includes
 several other xontribs' code:</p>
-<div class="highlight"><pre><span></span><span class="n">eddie</span><span class="nv">@eddie</span><span class="o">-</span><span class="n">ubuntu</span><span class="w"> </span><span class="o">~/</span><span class="p">.</span><span class="n">virtualenvs</span><span class="o">/</span><span class="n">xonsh</span><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">ls</span><span class="w"> </span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="mf">.7</span><span class="o">/</span><span class="n">site</span><span class="o">-</span><span class="n">packages</span><span class="o">/</span><span class="n">xontrib</span><span class="w">                                                                  </span>
-<span class="n">fzf</span><span class="o">-</span><span class="n">widgets</span><span class="p">.</span><span class="n">xsh</span><span class="w">  </span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span><span class="p">.</span><span class="n">xsh</span><span class="w">  </span><span class="n">thefuck</span><span class="p">.</span><span class="n">py</span><span class="w"></span>
-</pre></div>
+<div class="highlight"><pre><span></span><code><span class="err">eddie@eddie-ubuntu ~/.virtualenvs/xonsh $ ls lib/python3.7/site-packages/xontrib                                                                  </span>
+<span class="err">fzf-widgets.xsh  per-directory-history.xsh  thefuck.py</span>
+</code></pre></div>
 
 
 <p>Each of these <code>.xsh</code> and <code>.py</code> files were created by installing different
@@ -276,25 +295,25 @@ convention.</p>
 platform but not another. For mine, I chose <code>'any'</code> because I didn't expect to
 introduce functionality that only works on some of xonsh's supported platforms.</p>
 <p>So, now my xontrib is installable via <code>pip</code>!</p>
-<div class="highlight"><pre><span></span><span class="nv">eddie</span>@<span class="nv">eddie</span><span class="o">-</span><span class="nv">ubuntu</span> <span class="o">~/</span><span class="nv">source</span><span class="o">/</span><span class="nv">xontrib</span><span class="o">-</span><span class="nv">per</span><span class="o">-</span><span class="nv">directory</span><span class="o">-</span><span class="nv">history</span> <span class="nv">master</span> $ <span class="nv">tree</span>                                                                           
-.
-├── <span class="nv">setup</span>.<span class="nv">py</span>
-└── <span class="nv">xontrib</span>
-    └── <span class="nv">per</span><span class="o">-</span><span class="nv">directory</span><span class="o">-</span><span class="nv">history</span>.<span class="nv">xsh</span>
+<div class="highlight"><pre><span></span><code><span class="n">eddie</span><span class="nv">@eddie</span><span class="o">-</span><span class="n">ubuntu</span><span class="w"> </span><span class="o">~/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span><span class="w"> </span><span class="n">master</span><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">tree</span><span class="w">                                                                           </span>
+<span class="p">.</span><span class="w"></span>
+<span class="err">├──</span><span class="w"> </span><span class="n">setup</span><span class="p">.</span><span class="n">py</span><span class="w"></span>
+<span class="err">└──</span><span class="w"> </span><span class="n">xontrib</span><span class="w"></span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span><span class="p">.</span><span class="n">xsh</span><span class="w"></span>
 
-<span class="mi">1</span> <span class="nv">directory</span>, <span class="mi">2</span> <span class="nv">files</span>
+<span class="mi">1</span><span class="w"> </span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="n">files</span><span class="w"></span>
 
-<span class="nv">eddie</span>@<span class="nv">eddie</span><span class="o">-</span><span class="nv">ubuntu</span> <span class="o">~/</span><span class="nv">source</span><span class="o">/</span><span class="nv">xontrib</span><span class="o">-</span><span class="nv">per</span><span class="o">-</span><span class="nv">directory</span><span class="o">-</span><span class="nv">history</span> <span class="nv">master</span> $ <span class="nv">xpip</span> <span class="nv">install</span> .                                                                 
-<span class="nv">Processing</span> <span class="o">/</span><span class="nv">home</span><span class="o">/</span><span class="nv">eddie</span><span class="o">/</span><span class="nv">source</span><span class="o">/</span><span class="nv">xontrib</span><span class="o">-</span><span class="nv">per</span><span class="o">-</span><span class="nv">directory</span><span class="o">-</span><span class="nv">history</span>
-<span class="nv">Requirement</span> <span class="nv">already</span> <span class="nv">satisfied</span>: <span class="nv">xonsh</span><span class="o">&gt;=</span><span class="mi">0</span>.<span class="mi">9</span>.<span class="mi">3</span> <span class="nv">in</span> <span class="o">/</span><span class="nv">home</span><span class="o">/</span><span class="nv">eddie</span><span class="o">/</span><span class="nv">source</span><span class="o">/</span><span class="nv">xonsh</span> <span class="ss">(</span><span class="nv">from</span> <span class="nv">xontrib</span><span class="o">-</span><span class="nv">per</span><span class="o">-</span><span class="nv">directory</span><span class="o">-</span><span class="nv">history</span><span class="o">==</span><span class="mi">0</span>.<span class="mi">1</span><span class="ss">)</span> <span class="ss">(</span><span class="mi">0</span>.<span class="mi">9</span>.<span class="mi">3</span><span class="ss">)</span>
-<span class="nv">xontInstalling</span> <span class="nv">collected</span> <span class="nv">packages</span>: <span class="nv">xontrib</span><span class="o">-</span><span class="nv">per</span><span class="o">-</span><span class="nv">directory</span><span class="o">-</span><span class="nv">history</span>
-<span class="nv">rib</span>   <span class="nv">Running</span> <span class="nv">setup</span>.<span class="nv">py</span> <span class="nv">install</span> <span class="k">for</span> <span class="nv">xontrib</span><span class="o">-</span><span class="nv">per</span><span class="o">-</span><span class="nv">directory</span><span class="o">-</span><span class="nv">history</span> ... <span class="o">-</span><span class="nv">ldone</span>
-<span class="nv">Successfully</span> <span class="nv">installed</span> <span class="nv">xontrib</span><span class="o">-</span><span class="nv">per</span><span class="o">-</span><span class="nv">directory</span><span class="o">-</span><span class="nv">history</span><span class="o">-</span><span class="mi">0</span>.<span class="mi">1</span>
-<span class="nv">aYou</span> <span class="nv">are</span> <span class="nv">using</span> <span class="nv">pip</span> <span class="nv">version</span> <span class="mi">19</span>.<span class="mi">0</span>.<span class="mi">3</span>, <span class="nv">however</span> <span class="nv">version</span> <span class="mi">19</span>.<span class="mi">1</span>.<span class="mi">1</span> <span class="nv">is</span> <span class="nv">available</span>.
-<span class="nv">You</span> <span class="nv">should</span> <span class="nv">consider</span> <span class="nv">upgrading</span> <span class="nv">via</span> <span class="nv">the</span> <span class="s1">&#39;</span><span class="s">pip install --upgrade pip</span><span class="s1">&#39;</span> <span class="nv">command</span>.
-<span class="nv">eddie</span>@<span class="nv">eddie</span><span class="o">-</span><span class="nv">ubuntu</span> <span class="o">~/</span><span class="nv">source</span><span class="o">/</span><span class="nv">xontrib</span><span class="o">-</span><span class="nv">per</span><span class="o">-</span><span class="nv">directory</span><span class="o">-</span><span class="nv">history</span> <span class="nv">master</span> $ <span class="nv">xontrib</span> <span class="nv">load</span> <span class="nv">per</span><span class="o">-</span><span class="nv">directory</span><span class="o">-</span><span class="nv">history</span>                                             
-<span class="nv">hello</span> <span class="nv">world</span>
-</pre></div>
+<span class="n">eddie</span><span class="nv">@eddie</span><span class="o">-</span><span class="n">ubuntu</span><span class="w"> </span><span class="o">~/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span><span class="w"> </span><span class="n">master</span><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">xpip</span><span class="w"> </span><span class="n">install</span><span class="w"> </span><span class="p">.</span><span class="w">                                                                 </span>
+<span class="n">Processing</span><span class="w"> </span><span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">eddie</span><span class="o">/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span><span class="w"></span>
+<span class="n">Requirement</span><span class="w"> </span><span class="n">already</span><span class="w"> </span><span class="nl">satisfied</span><span class="p">:</span><span class="w"> </span><span class="n">xonsh</span><span class="o">&gt;=</span><span class="mf">0.9.3</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">eddie</span><span class="o">/</span><span class="n">source</span><span class="o">/</span><span class="n">xonsh</span><span class="w"> </span><span class="p">(</span><span class="k">from</span><span class="w"> </span><span class="n">xontrib</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span><span class="o">==</span><span class="mf">0.1</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="mf">0.9.3</span><span class="p">)</span><span class="w"></span>
+<span class="n">xontInstalling</span><span class="w"> </span><span class="n">collected</span><span class="w"> </span><span class="nl">packages</span><span class="p">:</span><span class="w"> </span><span class="n">xontrib</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span><span class="w"></span>
+<span class="n">rib</span><span class="w">   </span><span class="n">Running</span><span class="w"> </span><span class="n">setup</span><span class="p">.</span><span class="n">py</span><span class="w"> </span><span class="n">install</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">xontrib</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="o">-</span><span class="n">ldone</span><span class="w"></span>
+<span class="n">Successfully</span><span class="w"> </span><span class="n">installed</span><span class="w"> </span><span class="n">xontrib</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span><span class="o">-</span><span class="mf">0.1</span><span class="w"></span>
+<span class="n">aYou</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">pip</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="mf">19.0.3</span><span class="p">,</span><span class="w"> </span><span class="n">however</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="mf">19.1.1</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">available</span><span class="p">.</span><span class="w"></span>
+<span class="n">You</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">consider</span><span class="w"> </span><span class="n">upgrading</span><span class="w"> </span><span class="n">via</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="s1">&#39;pip install --upgrade pip&#39;</span><span class="w"> </span><span class="n">command</span><span class="p">.</span><span class="w"></span>
+<span class="n">eddie</span><span class="nv">@eddie</span><span class="o">-</span><span class="n">ubuntu</span><span class="w"> </span><span class="o">~/</span><span class="n">source</span><span class="o">/</span><span class="n">xontrib</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span><span class="w"> </span><span class="n">master</span><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">xontrib</span><span class="w"> </span><span class="k">load</span><span class="w"> </span><span class="n">per</span><span class="o">-</span><span class="n">directory</span><span class="o">-</span><span class="n">history</span><span class="w">                                             </span>
+<span class="n">hello</span><span class="w"> </span><span class="n">world</span><span class="w"></span>
+</code></pre></div>
 
 
 <p>And, yes, the only code in my xontrib's <code>.py</code> file right now is <code>print('hello world')</code>,

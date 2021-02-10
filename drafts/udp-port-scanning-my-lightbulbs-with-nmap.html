@@ -2,9 +2,9 @@
 <html>
   <head>
     <meta charset="UTF-8">
-        <title>dinogalactic - about</title>
+      <title>dinogalactic &mdash; UDP Port Scanning my Lightbulbs with nmap</title>
     <!-- Primary Meta Tags -->
-  <meta name="title" content="dinogalactic &mdash; python, electronics, books, linux, amateur radio, xonsh, project management, and more by Eddie Peters">
+  <meta name="title" content="dinogalactic &mdash; UDP Port Scanning my Lightbulbs with nmap">
     <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
 
     <!-- Open Graph / Facebook -->
@@ -24,8 +24,7 @@
     <link rel="stylesheet" href="../theme/css/typesetter.css" />
     <link rel="stylesheet" href="../theme/css/typesetter-extensions.css" />
     <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
-
-
+    <link href="https://www.dinogalactic.com/feeds/misc.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
   </head>
   <body>
     <header><a href="../" alt="dinogalactic">dinogalactic</a></header>
@@ -40,18 +39,18 @@
         </ul>
     </nav>
     <main>
-    <h1>about</h1>
-    
-
-    <p>Hi, I'm Eddie Peters. I work remotely from rural Virginia as a Software Engineer at <a href="https://truthinitiative.org/">Truth Initiative</a>. </p>
-<p>In my spare time, I tinker in various gardening, woodworking, programming, system administration, devops, and increasingly electrical and amateur radio pursuits.</p>
-<p>My website is generated with <a href="https://docs.getpelican.com/en/stable/">Pelican CMS</a>, uses my custom minimalist theme based on <a href="https://gitlab.com/Screwtapello/typesetter-css/-/tree/master/output">Typesetter</a>, and is currently hosted on Github Pages (though I'd like to get it off of Github soon).</p>
-<p>Below, I am smiling, holding a chicken.</p>
-<p><img src="/images/portrait.jpg" alt="Me, dirty and unshaven, smiling broadly, holding a chicken" /></p>
-
-        <p>
-        Last updated: Wed 22 May 2019
-        </p>
+<h1>UDP Port Scanning my Lightbulbs with nmap</h1>
+<p>I got one of the Wiz bulbs that Eric Pendergrass created a cool CVE for (see his blog post <a href="http://blog.dammitly.net/2019/10/cheap-hackable-wifi-light-bulbs-or-iot.html">here</a>).</p>
+<p>Given that I just started reading <a href="https://nostarch.com/pentesting">Penetration Testing by Georgia Weidman</a>, I decided to port scan these bulbs using nmap, even though I already knew they used a JSON-RPC-esque protocol on port 38899 via UDP.</p>
+<p>UDP scanning is less straightforward than TCP scanning. As Weidman explains, TCP has the concept of connections, meaning there's some handshaking that goes on to establish a sort of session between interlocutors, whereas UDP is connectionless. This means a TCP client is obligated to respond to a TCP connection request (<code>SYN</code>) with an acknowledgment of the request (<code>SYN-ACK</code>). <code>nmap</code> TCP scans exploit this aspect of the TCP protocol to definitively know whether a port is reachable and used by a service by initiating a connection (<code>SYN</code>) and checking for a response (<code>SYN-ACK</code>).</p>
+<p>In contrast, a service running on UDP on a port does not have to respond to an inbound request, so <code>nmap</code> cannot definitively tell whether there is a service running on a port. No response may mean the service has chosen not to respond or it could mean there is no service there at all. This is where I came up with a challenge for myself.</p>
+<p>I wanted to practice with <code>nmap</code> to create a scan that:</p>
+<ul>
+<li>Would hide all unresponsive services on the bulb (those whose on/off status we can't know for sure).</li>
+<li>Would scan all ports up to a limit, not just <code>nmap</code>'s default 1000 "interesting" ports.</li>
+<li>Would produce usable output that includes the response gotten from the service.</li>
+<li>Would definitely get at least the port that I know exists and responds to invalid input (port 38899, which will return an error if the input cannot be parsed as JSON).</li>
+</ul>
     </main>
     <aside>
         <h1>Tags</h1>
