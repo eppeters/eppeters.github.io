@@ -5,7 +5,7 @@ xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
 <url>
 <loc>https://www.dinogalactic.com/</loc>
-<lastmod>2021-02-10T23:16:43-00:00</lastmod>
+<lastmod>2021-03-04T09:30:59-00:00</lastmod>
 <changefreq>daily</changefreq>
 <priority>0.5</priority>
 </url>
@@ -20,6 +20,13 @@ xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
 <loc>https://www.dinogalactic.com/pages/booksread.html</loc>
 <lastmod>2021-01-05T06:00:00-05:00</lastmod>
+<changefreq>monthly</changefreq>
+<priority>0.5</priority>
+</url>
+
+<url>
+<loc>https://www.dinogalactic.com/you-should-use-boto3-paginators.html</loc>
+<lastmod>2021-03-04T06:00:00-05:00</lastmod>
 <changefreq>monthly</changefreq>
 <priority>0.5</priority>
 </url>
@@ -131,7 +138,7 @@ xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
 <url>
 <loc>https://www.dinogalactic.com/author/eddie-peters.html</loc>
-<lastmod>2021-02-10T06:00:00-04:56</lastmod>
+<lastmod>2021-03-04T06:00:00-04:56</lastmod>
 <changefreq>daily</changefreq>
 <priority>0.5</priority>
 </url>
