@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; Diary of a strange shell bug</title>
+    <!-- Primary Meta Tags -->
+  <meta name="title" content="dinogalactic &mdash; Diary of a strange shell bug">
+    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.dinogalactic.com/">
+    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="og:image" content="">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.dinogalactic.com/">
+    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="twitter:image" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../theme/css/typesetter.css" />
+    <link rel="stylesheet" href="../theme/css/typesetter-extensions.css" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
+  </head>
+  <body>
+    <header><a href="../" alt="dinogalactic">dinogalactic</a></header>
+    <nav>
+        <h1>Navigation</h2>
+        <ul>
+              <li><a href="../pages/about.html">about</a></li>
+              <li><a href="../pages/booksread.html">books</a></li>
+
+              <li><a href="../category/aws.html">AWS</a></li>
+              <li><a href="../category/misc.html">misc</a></li>
+              <li><a href="../category/xonshiousness.html">xonshiousness</a></li>
+        </ul>
+    </nav>
+    <main>
+<h1>Diary of a strange shell bug</h1>
+<p><link rel="stylesheet" type="text/css" href="/css/asciinema-player.css" /></p>
+<p>For a while, I've been unable to use some basic features of my usual shell, <code>xonsh</code>. So, when I need to do those things, I drop into a <code>bash</code> instance, do them, then exit. The trouble is - this happens so often now that I'm fed up, so that's why I'm spending this Tuesday evening neglecting taking out the trash or cleaning up my garage, and instead, I'm fixing a <code>xonsh</code> bug.</p>
+<p>Watch.</p>
+<p>I had trouble describing this any better than "Stuff doesn't look like it's making it into vim when I type it," but it <a href="https://github.com/xonsh/xonsh/issues/3311">turns out someone else described the issue that way</a>. So I'm fixing issue #3311. Awesome.</p>
+<h2>Finding a workaround</h2>
+<p>How do you even start diagnosing a bug like this? Well, the first step is figuring out what is actually happening, rather than figure out where it's happening or how to fix it. To do this, I'll use process of elimination by trying to reproduce it in the simplest possible environment I can.</p>
+<p>I do need to know what kinds of things to start eliminating, and I have some hunches about what could be causing it. My first hunches are that it is caused by using some <code>xontrib</code> (a <code>xonsh</code> extension) in addition to the normal shell. I have quite a few installed.</p>
+<p>To try xonsh without any <code>xontribs</code>, I'll run it in a Docker container provided with the source code (in the <code>git</code> repo) of <code>xonsh</code>, and I'll run <code>git rebase -i</code> in some git repo, since that command reliably produces the problem in my everyday environment.</p>
+<p>// Running xonsh inside a docker container</p>
+<p>// installing vim, trying it out</p>
+<p>Hmm, no issue. Interesting. Wait a second - I normally use Neovim! What if I install neovim and try out the same thing, using <code>$EDITOR='nvim'</code> instead?</p>
+<p>// installing nvim, trying it out</p>
+<p>Oh my God, there it is!</p>
+<p>Isuse #3311 above was an Emacs issue reporting this issue, but given my experience, I wondered if anyone else was having this problem specifically with Neovim? Indeed, someoone was. <a href="https://github.com/xonsh/xonsh/issues/2987">xonsh issue #2987</a> is someone having a similar issue:</p>
+<blockquote>
+<p>The modes on neovim should change in accordance to which key I hit. Instead it sends the ascii characters in a way that appears to be writing over the buffer, and not in the buffer.</p>
+</blockquote>
+<p>Unfortunately this user said nothing else about their experience, but another user suggested they try an arcane-looking workaround that seems like it might be promising. User <code>t184256</code> <a href="https://github.com/xonsh/xonsh/issues/2987#issuecomment-455310778&lt;Paste&gt;">said</a>:</p>
+<blockquote>
+<p>Does <code>__xonsh__.commands_cache.threadable_predictors['cheat'] = lambda _: False</code> fix that?</p>
+</blockquote>
+<p>The reporter of #2987 was complaining about an issue with <code>nvim</code>, but they were complaining about <code>xonsh</code>'s interaction with it through a command called <a href="https://github.com/cheat/cheat"><code>cheat</code></a>, which I'm unfamiliar with.</p>
+<blockquote>
+<p>cheat allows you to create and view interactive cheatsheets on the command-line. It was designed to help remind nix system administrators of options for commands that they use frequently, but not frequently enough to remember.</p>
+</blockquote>
+<p>So <code>cheat</code> apparently opens an editor to let you view these cheatsheets. What if I try the same arcane command that <code>t184256</code> suggested, but change <code>cheat</code> out for <code>git</code>?</p>
+<p>// trying this fix</p>
+<p>This "works"! The problem is seemingly gone! I felt like this was a promising solution because it would make sense if the <code>nvim</code> instance spawned by <code>git</code> was somehow not attached to the terminal correctly and key presses were being intercepted by the wrong thread (e.g. maybe they aren't being passed down to the <code>nvim</code> process correctly).</p>
+<p>So, this doesn't give us a solution, but it <em>does</em> seem to give us a (albeit murky) view of what is causing the problem.</p>
+<p>Finding a workaround is incredibly helpful because it points us in the right direction: it seems we should look at threadable predictability in <code>xonsh</code>, whatever that is.</p>
+<h2>Threadable predictability in <code>xonsh</code></h2>
+<p>Before moving on, I kind of noted where I was at this moment in <a href="https://github.com/xonsh/xonsh/issues/2987#issuecomment-571373284">this comment on #2987</a>.</p>
+<blockquote>
+<p>I am able to reproduce this issue with another command - I haven't tried
+<code>cheat</code>, but more importantly, @t184256's suggested workaround fixes the
+issue for me <em>inside the xonsh Docker container</em>.</p>
+<p>I have been having this issue when any <code>xonsh</code> subprocess opens an instance
+of <code>nvim</code>, but I don't have the same problem with <code>vim</code>. So, I used <code>git</code> to
+reproduce this instead of <code>cheat</code>, but I believe the problems are from the
+same issue. I can try <code>cheat</code> later, but I wanted to chime in on this because
+this bug has been bothering me for a while.</p>
+<p>If I do:</p>
+<p><code>$EDITOR='nvim'
+git rebase -i master # inside a git repo</code></p>
+<p>I have this issue.</p>
+<p>If I do:</p>
+<p><code>$EDITOR='vim'
+git rebase -i master # inside a git repo</code></p>
+<p>I don't have this issue.</p>
+<p>I believe that #3311 also stems from the same bug, so if I'm right, we could fix two issues at once by fixing this bug.</p>
+<p>That said, I'm not up on what threadable predictability is, but I'm happy to
+help fix this if anyone wants to point me in the right direction. For the
+moment I'm going to dig up any docs I can and start reading the <code>xonsh</code> code
+I can grep about threadable prediction.</p>
+</blockquote>
+<p>And of course, immediately after filing this comment, I started searching for issues containing "threadable," and found that folks have been talking about this specific issue for a while in <a href="https://github.com/xonsh/xonsh/pull/3285">#3285</a>. To quote user <code>fanosta</code>, the issue creator,</p>
+<blockquote></blockquote>
+<script src="/js/asciinema-player.js"></script>
+    </main>
+    <aside>
+        <h1>Tags</h1>
+        <ul>
+            <li><a href="../tag/amateur-radio.html">amateur radio</a></li>
+            <li><a href="../tag/aws.html">aws</a></li>
+            <li><a href="../tag/career.html">career</a></li>
+            <li><a href="../tag/cdk.html">cdk</a></li>
+            <li><a href="../tag/docker.html">docker</a></li>
+            <li><a href="../tag/evergreen.html">evergreen</a></li>
+            <li><a href="../tag/gardening.html">gardening</a></li>
+            <li><a href="../tag/ham-radio.html">ham radio</a></li>
+            <li><a href="../tag/jsii.html">jsii</a></li>
+            <li><a href="../tag/kids.html">kids</a></li>
+            <li><a href="../tag/learning.html">learning</a></li>
+            <li><a href="../tag/linux.html">linux</a></li>
+            <li><a href="../tag/open-source.html">open source</a></li>
+            <li><a href="../tag/parenting.html">parenting</a></li>
+            <li><a href="../tag/project-management.html">project management</a></li>
+            <li><a href="../tag/projects.html">projects</a></li>
+            <li><a href="../tag/projen.html">projen</a></li>
+            <li><a href="../tag/python.html">python</a></li>
+            <li><a href="../tag/raspi.html">raspi</a></li>
+            <li><a href="../tag/resume.html">resume</a></li>
+            <li><a href="../tag/shell.html">shell</a></li>
+            <li><a href="../tag/software-development.html">software development</a></li>
+            <li><a href="../tag/ubitx.html">ubitx</a></li>
+            <li><a href="../tag/xonsh.html">xonsh</a></li>
+            <li><a href="../tag/xontribs.html">xontribs</a></li>
+        </ul>
+    </aside>
+<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
+</html>

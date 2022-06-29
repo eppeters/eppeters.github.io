@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; How to Write a simple xonsh xontrib</title>
+    <!-- Primary Meta Tags -->
+  <meta name="title" content="dinogalactic &mdash; How to Write a simple xonsh xontrib">
+    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.dinogalactic.com/">
+    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="og:image" content="">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.dinogalactic.com/">
+    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="twitter:image" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./theme/css/typesetter.css" />
+    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
+  </head>
+  <body>
+    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
+    <nav>
+        <h1>Navigation</h2>
+        <ul>
+              <li><a href="./pages/about.html">about</a></li>
+              <li><a href="./pages/booksread.html">books</a></li>
+
+              <li><a href="./category/aws.html">AWS</a></li>
+              <li><a href="./category/misc.html">misc</a></li>
+              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+        </ul>
+    </nav>
+    <main>
+<h1>How to Write a simple xonsh xontrib</h1>
+<h2>Introduction</h2>
+<p>The <code>xonsh</code> docs have <a href="https://xon.sh/tutorial_xontrib.html">a guide on how to write
+xontribs</a>, but I think this guide is a
+bit brusk. It says everything it needs to say but leaves out a lot of the
+detail that someone like me might need to create a xontrib. So, while I write a
+xontrib for something else, I've decided to write a more detailed xontrib
+composition guide.</p>
+<p>Though this will show you how to create a xontrib, it is presented as a log of
+me making my way through this process rather than a traditional step-by-step
+how-to.</p>
+<p>When I say "create a xontrib," this phrase deceptively implies there is one
+step in creating a xontrib everyone can use. <em>If</em> you want to share your
+xontrib with the world, the involved steps are to:</p>
+<ol>
+<li>Literally create xontrib code and load it into your xonsh shell.</li>
+<li>Make this xontrib a distribution installable with something like <code>pip</code>.</li>
+<li>Host this xontrib distribution on PyPI.</li>
+<li><a href="https://xon.sh/tutorial_xontrib.html#tell-us-about-your-xontrib">Register the 
+   xontrib</a>
+   with the xonsh project.</li>
+</ol>
+<p>Once these steps are complete, the xontrib is ready for consumption by the good
+folks on the internet. If your aim is to write a xontrib solely for your
+personal use and never share it, you could stop at step 1 (but I'd recommend
+going to through step 2 as well).</p>
+<p>For this guide, I'll focus only on steps 1 and 2, which should be enough to get
+anyone far down the path of developing and using a xontrib they have developed.
+Steps 3 is a more general Python distrubtion concern and is outlined in the <a href="https://packaging.python.org/guides/distributing-packages-using-setuptools/#packaging-your-project">Python Packaging User Guide
+section on the
+topic</a>.</p>
+<p>Part 4 is covered in the above linked doc on registering xontribs with the
+xonsh project.</p>
+<h2>Software versions</h2>
+<p>I'm using <code>xonsh 0.9.3</code> and <code>Python 3.7.3</code> for this guide.</p>
+<h2>Step 1: What makes a xontrib?</h2>
+<p>The <code>xonsh</code> docs have <a href="https://xon.sh/tutorial_xontrib.html?highlight=xontrib">a guide on how to write xontribs</a>!</p>
+<p>These docs briefly tell us how to make a xontrib:</p>
+<blockquote>
+<p>Writing a xontrib is as easy as writing a xonsh or Python file and sticking it in a directory named <code>xontrib/</code>.</p>
+</blockquote>
+<p>That seems so simple! But how could that work? The docs are implying that
+creating any <code>.xsh</code> or <code>.py</code> file in a directory with the special name
+<code>xontrib/</code> will allow the xontrib to be imported and loaded by <code>xontrib load</code>.</p>
+<p>How could my <code>xontrib/</code> directory somewhere on my filesystem get picked up and
+added to a globally importable <code>xontrib</code> package? The answer is implicit
+namespaces. Implicit namespaces are a convention, introduced in <a href="https://www.python.org/dev/peps/pep-0420/">PEP
+420</a>, that the import machinery uses
+to construct a single package from multiple locations (these locations are
+called "partials").</p>
+<p>The specifics of implicit namespaces are a bit more complicated than this, but
+for xontribs, this means <em>almost</em> exactly what we were told. We need to create
+a <code>.xsh</code> or <code>.py</code> file inside a directory named <code>xontrib/</code>; however, missing
+from the docs is the important point that this <code>xontrib/</code> directory cannot just
+be <em>anywhere</em> on the file system - it must be available in the Python path.
+This should all become clear after an example.</p>
+<p>So, if we follow the implicit namespace conventions for our xontrib, it will be
+available on the <code>xontrib</code> package as a module. <code>xontrib load</code>, the line you
+are probably familiar with if you've <a href="https://xon.sh/xontribs.html?highlight=xontrib%20load">used a
+xontrib</a>,  takes the
+name of a module in the <code>xontrib</code> package, so <code>xontrib load myxontribname</code> will load
+the <code>xontrib.myxontribname</code> module as a xontrib.</p>
+<h3>xontrib "Hello World!"</h3>
+<p>Here's a trivial xontrib "Hello World!" example using these concepts.</p>
+<p>My first xontrib, called <code>hello_world</code> has the following directory structure:</p>
+<p>```
+@eddie-ubuntu ~/source/xontrib-hello-world $ tree
+.
+└── xontrib
+    └── hello_world.py</p>
+<p>1 directory, 1 file
+```</p>
+<p>I created this by running the following in xonsh inside the <code>xontrib-hello-world</code> directory:</p>
+<p><code>eddie@eddie-ubuntu ~/source/xontrib-hello-world $ mkdir xontrib
+eddie@eddie-ubuntu ~/source/xontrib-hello-world $ echo "print('Hello World!')" &gt; xontrib/hello_world.py</code></p>
+<p>Now, I want to load this xontrib, right? Let's see if xonsh has picked it up yet:</p>
+<p><code>eddie@eddie-ubuntu ~/source/xontrib-hello-world $ xontrib load hello_world
+The following xontribs are enabled but not installed:
+   hello_world
+To install them run
+    xpip install</code></p>
+<p>Hmm, this is a strange message, but it all makes sense when considering (1)
+what a xontrib is, (2) how implicit namespaces work with xontribs, and (3) how
+xontribs are normally installed. To break this message down, let's first tackle
+the statement that the xontrib is enabled but not installed. Indeed, we just
+enabled this xontrib with <code>xontrib load hello_world</code>, but by saying the xontrib
+is not installed, xonsh is effectively saying that the xontrib code cannot be
+found. The second part of the message, which tells us to install the xontrib
+via <code>xpip install</code> would be helpful if we were trying to install a xontrib from
+a distribution (a package with a <code>setup.py</code> that is hosted on
+<a href="https://pypi.org/">PyPI</a>, for instance). In our case, it isn't really helpful
+since we are trying to load a xontrib locally using the bare minimum components
+for creating a xontrib, so we can ignore this second message.</p>
+<p>So, how do we install our trivial xontrib? Since we aren't installing a
+distribution package and we're just relying on the import machinery's
+understanding of implicit namespace packages, we have to make sure all the
+requirements of that convention are satisfied. So far, we have done everything
+to create a xontrib except making it discoverable via import machinery under
+the <code>xontrib</code> package. This next step will do that.</p>
+<p>As usual, the way to make a package discoverable by import machinery is to add
+its containing directory to the <code>sys.path</code> global, so let's do that, picking up
+immediately where we left off before with the "The following xontribs are
+enabled but installed..." message:</p>
+<p>```
+eddie@eddie-ubuntu ~/source/xontrib-hello-world $ xontrib load hello_world
+The following xontribs are enabled but not installed:
+   hello_world
+To install them run
+    xpip install
+eddie@eddie-ubuntu ~/source/xontrib-hello-world $ from xontrib.voxapi import Vox
+eddie@eddie-ubuntu ~/source/xontrib-hello-world $ from sys import path
+eddie@eddie-ubuntu ~/source/xontrib-hello-world $ path
+['/home/eddie/.virtualenvs/xonsh/bin',
+ '/home/eddie/.pyenv/versions/3.7.3/lib/python37.zip',
+ '/home/eddie/.pyenv/versions/3.7.3/lib/python3.7',
+ '/home/eddie/.pyenv/versions/3.7.3/lib/python3.7/lib-dynload',
+ '/home/eddie/.virtualenvs/xonsh/lib/python3.7/site-packages',
+ '/home/eddie/source/xonsh',
+ '/home/eddie/source/xontrib-z']
+eddie@eddie-ubuntu ~/source/xontrib-hello-world $ tree
+.
+└── xontrib
+    └── hello_world.py</p>
+<p>1 directory, 1 file
+eddie@eddie-ubuntu ~/source/xontrib-hello-world $ path.append(os.getcwd())
+eddie@eddie-ubuntu ~/source/xontrib-hello-world $ path
+['/home/eddie/.virtualenvs/xonsh/bin',
+ '/home/eddie/.pyenv/versions/3.7.3/lib/python37.zip',
+ '/home/eddie/.pyenv/versions/3.7.3/lib/python3.7',
+ '/home/eddie/.pyenv/versions/3.7.3/lib/python3.7/lib-dynload',
+ '/home/eddie/.virtualenvs/xonsh/lib/python3.7/site-packages',
+ '/home/eddie/source/xonsh',
+ '/home/eddie/source/xontrib-z',
+ '/home/eddie/source/xontrib-hello-world']
+eddie@eddie-ubuntu ~/source/xontrib-hello-world $ xontrib load hello_world
+Hello World!
+```</p>
+<p>After adding the current directory, which contains the aforementioned
+<code>xontrib/</code> named directory, we are able to enabled the xontrib, and upon
+loading it, we see that xonsh must think it's installed because it runs the
+code inside the <code>hello_world.py</code> file and prints "Hello World!" to the screen.</p>
+<p>That concludes the creation of a super simple xontrib. The rest of this post
+will be concerned with building up a distribution out of a simple xontrib. To
+spoil the fun a bit, packaging up a xontrib is just a matter of getting
+<code>setuptools</code> to put our xontrib code in a <code>xontrib/</code> directory that is already
+in the <code>sys.path</code> so that it can be loaded as a module on the <code>xontrib</code>
+package.</p>
+<h2>Step 2: How do we make a xontrib installable with something like pip?</h2>
+<p>Python packages are described for easy installation through the <code>setup.py</code> file.</p>
+<p>I had not created a Python package before this one, though I was acquainted
+with <code>setup.py</code> files through the many examples I saw in GitHub projects, but I
+never understood <code>setup.py</code> very well.</p>
+<p>In the fictional internet time between the last step and this one, I started
+working on a real xontrib that I will use for the rest of this guide. This
+means I'm abandoning the "Hello World!" xontrib and creating one called
+<code>xontrib-per-directory-history</code>. This will be like <a href="https://github.com/jimhester/per-directory-history">per-directory-history for
+zsh</a>, which I used for a
+long time in my <code>zsh</code> configuration and now miss dearly. The following steps
+should be applicable regardless of the goal of the xontrib you are creating.</p>
+<p>This is the <code>setup.py</code> configuration I ended up with for this xontrib:</p>
+<p>```
+xontrib-per-directory-history</p>
+<hr />
+<p>Per-directory history for xonsh, like zsh's
+https://github.com/jimhester/per-directory-history</p>
+<p>Restricts history to those that were executed in the current
+directory, with keybindings to switch between that and global history.
+"""</p>
+<p>from setuptools import setup</p>
+<p>setup(
+    name='xontrib-per-directory-history',
+    version='0.1',
+    description="Per-directory history for xonsh, like zsh's https://github.com/jimhester/per-directory-history",
+    long_description=<strong>doc</strong>,
+    license='MIT',
+    url='https://github.com/eppeters/xontrib-per-directory-history',
+    author='Eddie Peters',
+    author_email='edward.paul.peters@gmail.com',
+    packages=['xontrib'],
+    package_dir={'xontrib': 'xontrib'},
+    package_data={'xontrib': ['*.xsh']},
+    platforms='any',
+    install_requires=[
+        'xonsh&gt;=0.9.3',
+    ],
+    classifiers=[
+        'Environment :: Console',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Topic :: System :: Shells',
+        'Topic :: System :: System Shells',
+    ]
+)
+```</p>
+<p>xontrib packages have a particular layout that requires us to write some
+boilerplate in the <code>setup.py</code>. The xonsh docs link to a <a href="https://github.com/laerus/cookiecutter-xontrib">cookiecutter
+template</a> that you can use to
+generate most of this, as well as the file structure, for you if you want.</p>
+<p>Most of the <code>kwargs</code> passed to <code>setup</code> define obvious informational metadata
+and won't be discussed here. They are useful for attribution, searching on
+PyPI, etc., but won't affect the installability of your xontrib package. The
+most interesting (read: least obvious) of these informational pieces is the
+<code>classifiers</code> list, which you can find out more about on <a href="https://pypi.org/classifiers/">PyPI's classifiers
+page</a>.</p>
+<p>The following triplet effectively tells <code>setuptools</code> to do everything we did manually in Step 1 above:</p>
+<p><code>packages=['xontrib'],
+    package_dir={'xontrib': 'xontrib'},
+    package_data={'xontrib': ['*.xsh']},</code></p>
+<p><code>packages</code> says that this package will provide a package named <code>xontrib</code>,
+<code>package_dir</code> maps this <code>xontrib</code> package to the directory that contains the
+<code>xontrib</code> package's code, and this <code>package_data</code> setting tells <code>setuptools</code> to
+not only install <code>.py</code> files into the package's final installation location,
+but to also include any files matching the glob pattern <code>*.xsh</code>. More details
+on this setting can be found in the <a href="build://setuptools.readthedocs.io/en/latest/setuptools.html#including-data-files">setuptools data files 
+documentation</a>.</p>
+<p>Conveniently, setuptools will install multiple distributions that claim to
+create the same packages via the <code>packages</code> directive without clobbering one
+another (assuming their contents don't conflict). What this means for a xontrib
+is that all the xontribs that use <code>packages=['xontrib']</code> will have their <code>.py</code>
+and <code>.xsh</code> files installed into the <code>site-packages</code> <code>xontrib</code> directory
+alongside the other installed xontribs' <code>.py</code> and <code>.xsh</code> files.</p>
+<p>Have a look at the
+<code>xontrib/</code> directory inside my <code>xonsh</code> virtualenv, for instance, which includes
+several other xontribs' code:</p>
+<p><code>eddie@eddie-ubuntu ~/.virtualenvs/xonsh $ ls lib/python3.7/site-packages/xontrib                                                                  
+fzf-widgets.xsh  per-directory-history.xsh  thefuck.py</code></p>
+<p>Each of these <code>.xsh</code> and <code>.py</code> files were created by installing different
+xontrib Python packages using <code>pip</code>, yet their code lives in the same spot,
+discoverable by import machinery using the implicit namespace packages
+convention.</p>
+<p><code>platforms</code> allows us to specify that a xontrib should be available on one
+platform but not another. For mine, I chose <code>'any'</code> because I didn't expect to
+introduce functionality that only works on some of xonsh's supported platforms.</p>
+<p>So, now my xontrib is installable via <code>pip</code>!</p>
+<p>```
+eddie@eddie-ubuntu ~/source/xontrib-per-directory-history master $ tree                                                                         <br />
+.
+├── setup.py
+└── xontrib
+    └── per-directory-history.xsh</p>
+<p>1 directory, 2 files</p>
+<p>eddie@eddie-ubuntu ~/source/xontrib-per-directory-history master $ xpip install .                                                               <br />
+Processing /home/eddie/source/xontrib-per-directory-history
+Requirement already satisfied: xonsh&gt;=0.9.3 in /home/eddie/source/xonsh (from xontrib-per-directory-history==0.1) (0.9.3)
+xontInstalling collected packages: xontrib-per-directory-history
+rib   Running setup.py install for xontrib-per-directory-history ... -ldone
+Successfully installed xontrib-per-directory-history-0.1
+aYou are using pip version 19.0.3, however version 19.1.1 is available.
+You should consider upgrading via the 'pip install --upgrade pip' command.
+eddie@eddie-ubuntu ~/source/xontrib-per-directory-history master $ xontrib load per-directory-history                                           <br />
+hello world
+```</p>
+<p>And, yes, the only code in my xontrib's <code>.py</code> file right now is <code>print('hello world')</code>,
+but that's beside the point.</p>
+<h2>Conclusion</h2>
+<p>I hope you've found this guide useful for getting started in developing a
+xontrib, but obviously I've left out everything regarding what you can do with
+a xontrib. xontribs allow hooking into shell functionality, such as that
+provided by <a href="https://github.com/prompt-toolkit/python-prompt-toolkit">prompt
+toolkit</a>. Using
+<code>prompt toolkit</code>'s keybinding functionality would allow you to install a new
+keyboard command to run some code, for instance. For more examples and
+inspiration for what can be done in a xontrib, I suggest checking out the
+<a href="https://github.com/xonsh/xonsh/tree/master/xontrib">xontribs bundled with xonsh by
+default</a>. Happy hacking!</p>
+<p>For information on sharing your xontrib with the world, check out the links in
+the introduction.</p>
+    </main>
+    <aside>
+        <h1>Tags</h1>
+        <ul>
+            <li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+            <li><a href="./tag/aws.html">aws</a></li>
+            <li><a href="./tag/career.html">career</a></li>
+            <li><a href="./tag/cdk.html">cdk</a></li>
+            <li><a href="./tag/docker.html">docker</a></li>
+            <li><a href="./tag/evergreen.html">evergreen</a></li>
+            <li><a href="./tag/gardening.html">gardening</a></li>
+            <li><a href="./tag/ham-radio.html">ham radio</a></li>
+            <li><a href="./tag/jsii.html">jsii</a></li>
+            <li><a href="./tag/kids.html">kids</a></li>
+            <li><a href="./tag/learning.html">learning</a></li>
+            <li><a href="./tag/linux.html">linux</a></li>
+            <li><a href="./tag/open-source.html">open source</a></li>
+            <li><a href="./tag/parenting.html">parenting</a></li>
+            <li><a href="./tag/project-management.html">project management</a></li>
+            <li><a href="./tag/projects.html">projects</a></li>
+            <li><a href="./tag/projen.html">projen</a></li>
+            <li><a href="./tag/python.html">python</a></li>
+            <li><a href="./tag/raspi.html">raspi</a></li>
+            <li><a href="./tag/resume.html">resume</a></li>
+            <li><a href="./tag/shell.html">shell</a></li>
+            <li><a href="./tag/software-development.html">software development</a></li>
+            <li><a href="./tag/ubitx.html">ubitx</a></li>
+            <li><a href="./tag/xonsh.html">xonsh</a></li>
+            <li><a href="./tag/xontribs.html">xontribs</a></li>
+        </ul>
+    </aside>
+<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
+</html>

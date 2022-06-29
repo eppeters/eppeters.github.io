@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; Digging into xonsh history backends</title>
+    <!-- Primary Meta Tags -->
+  <meta name="title" content="dinogalactic &mdash; Digging into xonsh history backends">
+    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.dinogalactic.com/">
+    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="og:image" content="">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.dinogalactic.com/">
+    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="twitter:image" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./theme/css/typesetter.css" />
+    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
+  </head>
+  <body>
+    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
+    <nav>
+        <h1>Navigation</h2>
+        <ul>
+              <li><a href="./pages/about.html">about</a></li>
+              <li><a href="./pages/booksread.html">books</a></li>
+
+              <li><a href="./category/aws.html">AWS</a></li>
+              <li><a href="./category/misc.html">misc</a></li>
+              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+        </ul>
+    </nav>
+    <main>
+<h1>Digging into xonsh history backends</h1>
+<h2>Motivation</h2>
+<p>I want to write a per-directory-history xontrib for xonsh, like <a href="https://github.com/jimhester/per-directory-history">the one I used for zsh</a>. The piece of information that that I need to do this is missing from xonsh history entries right now: the working directory a historical command was executed in. <a href="https://github.com/jimhester/per-directory-history">jimhester/per-directory-history</a> tracks this by hooking into zsh's history searching and creation commands and putting each command in two history files, a global one and one specifically for the directory the command was executed in. I want to write my xontrib in the most xonshious (my word for if something works with the xonsh philosophy) way, so I don't want to rip this implementation scheme from <code>per-directory-history</code> and jam it into xonsh where there's a better way. So I have to see where I have to collect, store, and read this metadata.</p>
+<p>Some ideas I have so far are:</p>
+<ol>
+<li>add a new history backend that writes entries with the additional metadata of wherever the command was executed</li>
+<li>essentially step (1), but instead of adding a new history backend, augment whatever history backend is in use with this new functionlity (composition by way of monkey-patching)</li>
+<li>listen to some existing hooks/events for xonsh history lookup and additions and add the functionality there</li>
+</ol>
+<p>Or some combination of the above, depending on what I find.</p>
+<p>This post documents my exploration of how history is implemented in xonsh.</p>
+<p>I'll pay particular attention to how history backends work with the shell backend abstraction so that I can write a xontrib that is as agnostic as possible about the shell implementation in use (<code>ptk</code>, <code>ptk2</code>, <code>readline</code>, <code>jupyter</code>, etc.).</p>
+<h2>Reading the existing documentation first</h2>
+<p>So I figured that I should read any existing documentation first, since it's possible that:</p>
+<ol>
+<li>The xonsh docs already include a section that tell me how to do this or something close to it</li>
+<li>I might find learn something that I realize is undocumented, and then I can contribute that back to the project docs</li>
+</ol>
+<p>I found three documents dealing with history on <a href="https://xon.sh">xon.sh</a>:</p>
+<ul>
+<li><a href="https://xon.sh/tutorial_hist.html">Tutorial: History</a> - explains the richer model of history that xonsh offers, and introduces <code>history</code> command usage</li>
+<li><a href="https://xon.sh/tutorial_history_backend.html">Tutorial: Writing Your Own History Backend</a> - walks through authoring a new history backend with a CouchDB-backed history backend and replacing the default history backend with this new one</li>
+<li><a href="https://xon.sh/api/history/index.html">History API</a> - </li>
+</ul>
+<p>While each of these is good at doing what it says, notice that none of them discusses how history backends are instantiated or how history entries are constructed during shell execution. The History API docs come closest, but that's cheating because those docs are autogenerated from docstrings in the Python source for xonsh.</p>
+<h2>How history entries are managed</h2>
+<p>Since there is no smoking gun in the Xonsh docs talking about how history backends are created and where the components of history entries come from, I decided I have to dig into the xonsh code now rather than later.</p>
+<p>Rather than just explain when and how xonsh creates new history entries (which I will do some of), I also want to explain how I came to this understanding, since it's incredibly unlikely you're reading this doc just to learn how to write a clone of <a href="https://github.com/jimhester/per-directory-history">jimhester/per-directory-history</a>`.</p>
+<p>xonsh has support for multiple history backends, as we know. It ships with 3 backend implementations: <a href="">history.json.JsonHistory</a> and <a href="">history.sqlite.SqliteHistory</a>.</p>
+<p>These backends are implementations of the history backend abstraction <a href="">history.base.History</a>. <code>history.base.History</code> doesn't do anything useful on its own - it is just inherited by implementations and defines the things the xonsh shell expects a history backend to be able to do:</p>
+<ul>
+<li><code>append</code> (add something to the history)</li>
+<li><code>flush</code> (force whatever is in memory to persist to the backend's storage, such as disk)</li>
+<li><code>items</code> (getting items for the current history session)</li>
+<li><code>all_items</code> (getting... all the items)</li>
+<li><code>info</code> (providing shell history info)</li>
+<li><code>run_gc</code> (garbage collecting).</li>
+<li>It also allows list-like behavior via index access and slicing with <a href="https://docs.python.org/3/reference/datamodel.html#object.__getitem__"><strong>getitem</strong></a>.</li>
+</ul>
+<p>The fact that history backends implement <code>history.base.History</code> is our first clue into how xonsh backends work. This fact means the xonsh shell does not interact directly with a history backend, so the shell's code doesn't know what backend it's working with - this is handled by our good friend polymorphism. For understanding how history entries are created, this establishes some constraints on what a history backend can accept as input - if the central part of the xonsh shell's code is interacting with a unique history backend through a generic abstraction, that unique history backend cannot use input that isn't passed into the generic abstraction. In other words, the xonsh shell gives a particular history item data structure to every history backend, no matter how special that history backend is, and if we want the history backend to be able to act on some other piece of data (such as the working directory the history item was executed in!), we have to alter that data structure.</p>
+<h2>The history entry data structure</h2>
+<p>I had trouble finding where these entries were defined and where they were <code>append</code>ed to the history backend, but I soon realized I could drop an <code>ipdb</code> break statement into my active history backend's <code>append</code> method (<code>JsonHistory.append</code>) and use the debugger's <code>where</code> command to get a stacktrace, leading me directly to where xonsh appends history to the backend. I started up my debuggified xonsh, ran a command, watched as it paused in <code>ipdb</code>, and got the traceback:</p>
+<p>(Note that you should make sure <code>$XONSH_DEBUG</code> is on or, alternatively, install <code>xonsh</code> as an <a href="">editable package</a> to avoid <a href="">almalgamation</a> and can see your changes right away without re-running <code>setup.py</code>.)</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>eddie@eddie-ubuntu ~ $ <span style="color: #336666">echo</span> <span style="color: #CC3300">&#39;hey&#39;</span>                                                                                                                 
+hey
+&gt; /home/eddie/source/xonsh/xonsh/history/json.py<span style="color: #555555">(</span><span style="color: #FF6600">353</span><span style="color: #555555">)</span>append<span style="color: #555555">()</span>
+    <span style="color: #FF6600">352</span>         import ipdb; ipdb.set_trace<span style="color: #555555">()</span>
+--&gt; <span style="color: #FF6600">353</span>         self.buffer.append<span style="color: #555555">(</span>cmd<span style="color: #555555">)</span>
+    <span style="color: #FF6600">354</span>         self._len +<span style="color: #555555">=</span> <span style="color: #FF6600">1</span>  <span style="color: #0099FF; font-style: italic"># must come before flushing</span>
+
+ipdb&gt; where
+  /home/eddie/.virtualenvs/xonsh/bin/xonsh<span style="color: #555555">(</span><span style="color: #FF6600">7</span><span style="color: #555555">)</span>&lt;module&gt;<span style="color: #555555">()</span>
+      <span style="color: #FF6600">5</span> <span style="color: #003333">__file__</span> <span style="color: #555555">=</span> <span style="color: #CC3300">&#39;/home/eddie/source/xonsh/scripts/xonsh&#39;</span>
+      <span style="color: #FF6600">6</span> with open<span style="color: #555555">(</span>__file__<span style="color: #555555">)</span> as f:
+----&gt; <span style="color: #FF6600">7</span>     exec<span style="color: #555555">(</span>compile<span style="color: #555555">(</span>f.read<span style="color: #555555">()</span>, __file__, <span style="color: #CC3300">&#39;exec&#39;</span><span style="color: #555555">))</span>
+
+  /home/eddie/source/xonsh/scripts/xonsh<span style="color: #555555">(</span><span style="color: #FF6600">4</span><span style="color: #555555">)</span>&lt;module&gt;<span style="color: #555555">()</span>
+      <span style="color: #FF6600">2</span> 
+      <span style="color: #FF6600">3</span> from xonsh.main import main
+----&gt; <span style="color: #FF6600">4</span> main<span style="color: #555555">()</span>
+
+  /home/eddie/source/xonsh/xonsh/main.py<span style="color: #555555">(</span><span style="color: #FF6600">402</span><span style="color: #555555">)</span>main<span style="color: #555555">()</span>
+    <span style="color: #FF6600">401</span>         <span style="color: #003333">args</span> <span style="color: #555555">=</span> premain<span style="color: #555555">(</span>argv<span style="color: #555555">)</span>
+--&gt; <span style="color: #FF6600">402</span>         <span style="color: #006699; font-weight: bold">return</span> main_xonsh<span style="color: #555555">(</span>args<span style="color: #555555">)</span>
+    <span style="color: #FF6600">403</span>     except Exception as err:
+
+  /home/eddie/source/xonsh/xonsh/main.py<span style="color: #555555">(</span><span style="color: #FF6600">431</span><span style="color: #555555">)</span>main_xonsh<span style="color: #555555">()</span>
+    <span style="color: #FF6600">430</span>             try:
+--&gt; <span style="color: #FF6600">431</span>                 shell.shell.cmdloop<span style="color: #555555">()</span>
+    <span style="color: #FF6600">432</span>             finally:
+
+  /home/eddie/source/xonsh/xonsh/ptk2/shell.py<span style="color: #555555">(</span><span style="color: #FF6600">194</span><span style="color: #555555">)</span>cmdloop<span style="color: #555555">()</span>
+    <span style="color: #FF6600">193</span>                     <span style="color: #003333">line</span> <span style="color: #555555">=</span> self.precmd<span style="color: #555555">(</span>line<span style="color: #555555">)</span>
+--&gt; <span style="color: #FF6600">194</span>                     self.default<span style="color: #555555">(</span>line<span style="color: #555555">)</span>
+    <span style="color: #FF6600">195</span>             except <span style="color: #555555">(</span>KeyboardInterrupt, SystemExit<span style="color: #555555">)</span>:
+
+  /home/eddie/source/xonsh/xonsh/base_shell.py<span style="color: #555555">(</span><span style="color: #FF6600">375</span><span style="color: #555555">)</span>default<span style="color: #555555">()</span>
+    <span style="color: #FF6600">374</span>             <span style="color: #003333">tee_out</span> <span style="color: #555555">=</span> tee.getvalue<span style="color: #555555">()</span>
+--&gt; <span style="color: #FF6600">375</span>             self._append_history<span style="color: #555555">(</span><span style="color: #003333">inp</span><span style="color: #555555">=</span>src, <span style="color: #003333">ts</span><span style="color: #555555">=[</span>ts0, ts1<span style="color: #555555">]</span>, <span style="color: #003333">tee_out</span><span style="color: #555555">=</span>tee_out<span style="color: #555555">)</span>
+    <span style="color: #FF6600">376</span>             self.accumulated_inputs +<span style="color: #555555">=</span> src
+
+  /home/eddie/source/xonsh/xonsh/base_shell.py<span style="color: #555555">(</span><span style="color: #FF6600">410</span><span style="color: #555555">)</span>_append_history<span style="color: #555555">()</span>
+    <span style="color: #FF6600">409</span>         <span style="color: #006699; font-weight: bold">if</span> hist is not None:
+--&gt; <span style="color: #FF6600">410</span>             hist.append<span style="color: #555555">(</span>info<span style="color: #555555">)</span>
+    <span style="color: #FF6600">411</span>             hist.last_cmd_rtn <span style="color: #555555">=</span> hist.last_cmd_out <span style="color: #555555">=</span> None
+
+&gt; /home/eddie/source/xonsh/xonsh/history/json.py<span style="color: #555555">(</span><span style="color: #FF6600">353</span><span style="color: #555555">)</span>append<span style="color: #555555">()</span>
+    <span style="color: #FF6600">352</span>         import ipdb; ipdb.set_trace<span style="color: #555555">()</span>
+--&gt; <span style="color: #FF6600">353</span>         self.buffer.append<span style="color: #555555">(</span>cmd<span style="color: #555555">)</span>
+    <span style="color: #FF6600">354</span>         self._len +<span style="color: #555555">=</span> <span style="color: #FF6600">1</span>  <span style="color: #0099FF; font-style: italic"># must come before flushing</span>
+</code></pre></div>
+
+
+<p>Maybe that wouldn't have been so hard to track down manually, but history is appended to in <code>BaseShell.default()</code> with a method called <code>BaseShell._append_history()</code>.</p>
+<p>So what kind of information is passed to <code>_append_history</code>?</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #006699; font-weight: bold">def</span> <span style="color: #CC00FF">default</span>(<span style="color: #336666">self</span>, line):
+    <span style="color: #CC3300; font-style: italic">&quot;&quot;&quot;Implements code execution.&quot;&quot;&quot;</span>
+    line <span style="color: #555555">=</span> line <span style="color: #006699; font-weight: bold">if</span> line<span style="color: #555555">.</span>endswith(<span style="color: #CC3300">&quot;</span><span style="color: #CC3300; font-weight: bold">\n</span><span style="color: #CC3300">&quot;</span>) <span style="color: #006699; font-weight: bold">else</span> line <span style="color: #555555">+</span> <span style="color: #CC3300">&quot;</span><span style="color: #CC3300; font-weight: bold">\n</span><span style="color: #CC3300">&quot;</span>
+    src, code <span style="color: #555555">=</span> <span style="color: #336666">self</span><span style="color: #555555">.</span>push(line)
+    <span style="color: #006699; font-weight: bold">if</span> code <span style="color: #000000; font-weight: bold">is</span> <span style="color: #006699; font-weight: bold">None</span>:
+        <span style="color: #006699; font-weight: bold">return</span>
+
+    events<span style="color: #555555">.</span>on_precommand<span style="color: #555555">.</span>fire(cmd<span style="color: #555555">=</span>src)
+
+    env <span style="color: #555555">=</span> builtins<span style="color: #555555">.</span>__xonsh__<span style="color: #555555">.</span>env
+    hist <span style="color: #555555">=</span> builtins<span style="color: #555555">.</span>__xonsh__<span style="color: #555555">.</span>history  <span style="color: #0099FF; font-style: italic"># pylint: disable=no-member</span>
+    ts1 <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">None</span>
+    enc <span style="color: #555555">=</span> env<span style="color: #555555">.</span>get(<span style="color: #CC3300">&quot;XONSH_ENCODING&quot;</span>)
+    err <span style="color: #555555">=</span> env<span style="color: #555555">.</span>get(<span style="color: #CC3300">&quot;XONSH_ENCODING_ERRORS&quot;</span>)
+    tee <span style="color: #555555">=</span> Tee(encoding<span style="color: #555555">=</span>enc, errors<span style="color: #555555">=</span>err)
+    <span style="color: #006699; font-weight: bold">try</span>:
+        ts0 <span style="color: #555555">=</span> time<span style="color: #555555">.</span>time()
+        run_compiled_code(code, <span style="color: #336666">self</span><span style="color: #555555">.</span>ctx, <span style="color: #006699; font-weight: bold">None</span>, <span style="color: #CC3300">&quot;single&quot;</span>)
+        ts1 <span style="color: #555555">=</span> time<span style="color: #555555">.</span>time()
+        <span style="color: #006699; font-weight: bold">if</span> hist <span style="color: #000000; font-weight: bold">is</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #006699; font-weight: bold">None</span> <span style="color: #000000; font-weight: bold">and</span> hist<span style="color: #555555">.</span>last_cmd_rtn <span style="color: #000000; font-weight: bold">is</span> <span style="color: #006699; font-weight: bold">None</span>:
+            hist<span style="color: #555555">.</span>last_cmd_rtn <span style="color: #555555">=</span> <span style="color: #FF6600">0</span>  <span style="color: #0099FF; font-style: italic"># returncode for success</span>
+    <span style="color: #006699; font-weight: bold">except</span> XonshError <span style="color: #006699; font-weight: bold">as</span> e:
+        <span style="color: #336666">print</span>(e<span style="color: #555555">.</span>args[<span style="color: #FF6600">0</span>], file<span style="color: #555555">=</span>sys<span style="color: #555555">.</span>stderr)
+        <span style="color: #006699; font-weight: bold">if</span> hist <span style="color: #000000; font-weight: bold">is</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #006699; font-weight: bold">None</span> <span style="color: #000000; font-weight: bold">and</span> hist<span style="color: #555555">.</span>last_cmd_rtn <span style="color: #000000; font-weight: bold">is</span> <span style="color: #006699; font-weight: bold">None</span>:
+            hist<span style="color: #555555">.</span>last_cmd_rtn <span style="color: #555555">=</span> <span style="color: #FF6600">1</span>  <span style="color: #0099FF; font-style: italic"># return code for failure</span>
+    <span style="color: #006699; font-weight: bold">except</span> <span style="color: #CC0000; font-weight: bold">Exception</span>:  <span style="color: #0099FF; font-style: italic"># pylint: disable=broad-except</span>
+        print_exception()
+        <span style="color: #006699; font-weight: bold">if</span> hist <span style="color: #000000; font-weight: bold">is</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #006699; font-weight: bold">None</span> <span style="color: #000000; font-weight: bold">and</span> hist<span style="color: #555555">.</span>last_cmd_rtn <span style="color: #000000; font-weight: bold">is</span> <span style="color: #006699; font-weight: bold">None</span>:
+            hist<span style="color: #555555">.</span>last_cmd_rtn <span style="color: #555555">=</span> <span style="color: #FF6600">1</span>  <span style="color: #0099FF; font-style: italic"># return code for failure</span>
+    <span style="color: #006699; font-weight: bold">finally</span>:
+        ts1 <span style="color: #555555">=</span> ts1 <span style="color: #000000; font-weight: bold">or</span> time<span style="color: #555555">.</span>time()
+        tee_out <span style="color: #555555">=</span> tee<span style="color: #555555">.</span>getvalue()
+        <span style="color: #336666">self</span><span style="color: #555555">.</span>_append_history(inp<span style="color: #555555">=</span>src, ts<span style="color: #555555">=</span>[ts0, ts1], tee_out<span style="color: #555555">=</span>tee_out)
+        <span style="color: #336666">self</span><span style="color: #555555">.</span>accumulated_inputs <span style="color: #555555">+=</span> src
+        <span style="color: #006699; font-weight: bold">if</span> (
+            tee_out
+            <span style="color: #000000; font-weight: bold">and</span> env<span style="color: #555555">.</span>get(<span style="color: #CC3300">&quot;XONSH_APPEND_NEWLINE&quot;</span>)
+            <span style="color: #000000; font-weight: bold">and</span> <span style="color: #000000; font-weight: bold">not</span> tee_out<span style="color: #555555">.</span>endswith(os<span style="color: #555555">.</span>linesep)
+        ):
+            <span style="color: #336666">print</span>(os<span style="color: #555555">.</span>linesep, end<span style="color: #555555">=</span><span style="color: #CC3300">&quot;&quot;</span>)
+        tee<span style="color: #555555">.</span>close()
+        <span style="color: #336666">self</span><span style="color: #555555">.</span>_fix_cwd()
+    <span style="color: #006699; font-weight: bold">if</span> builtins<span style="color: #555555">.</span>__xonsh__<span style="color: #555555">.</span>exit:  <span style="color: #0099FF; font-style: italic"># pylint: disable=no-member</span>
+        <span style="color: #006699; font-weight: bold">return</span> <span style="color: #006699; font-weight: bold">True</span>
+</code></pre></div>
+
+
+<p>In the <code>finally</code> block, we see <code>inp</code> is <code>src</code>, which, after digging around a big into what happens above this call, appears to be the string that was typed into the command prompt, as opposed to the <code>code</code>, which is the xonsh code that was compiled and run (successfully or not) from compiling this <code>src</code>. Interestingly, this means we are typing in source code each time we enter text the xonsh REPL, and xonsh is compiling/running  it. The essential piece of a history entry is a bit of uncompiled source code (like <code>ls -alh</code> or <code>import sys</code>)!</p>
+<p>Let's follow an <code>ls</code> command entry from the prompt through <code>BaseShell.default()</code> and the code that appends the entry to history.</p>
+<p>The code block picks up just after I've entered the <code>ls</code> command at the prompt.</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #555555">&gt;</span> <span style="color: #555555">/</span>home<span style="color: #555555">/</span>eddie<span style="color: #555555">/</span>source<span style="color: #555555">/</span>xonsh<span style="color: #555555">/</span>xonsh<span style="color: #555555">/</span>base_shell<span style="color: #555555">.</span>py(<span style="color: #FF6600">348</span>)default()
+    <span style="color: #FF6600">347</span>         src, code <span style="color: #555555">=</span> <span style="color: #336666">self</span><span style="color: #555555">.</span>push(line)
+<span style="color: #555555">--&gt;</span> <span style="color: #FF6600">348</span>         <span style="color: #006699; font-weight: bold">if</span> code <span style="color: #000000; font-weight: bold">is</span> <span style="color: #006699; font-weight: bold">None</span>:
+    <span style="color: #FF6600">349</span>             <span style="color: #006699; font-weight: bold">return</span>
+
+ipdb<span style="color: #555555">&gt;</span> code                                                                                                                                                                                                                                                                                            
+<span style="color: #555555">&lt;</span>code <span style="color: #336666">object</span> <span style="color: #555555">&lt;</span>module<span style="color: #555555">&gt;</span> at <span style="color: #FF6600">0x7f3682be44b0</span>, file <span style="color: #CC3300">&quot;/home/eddie/.virtualenvs/xonsh/lib/python3.7/site-packages/xontrib/fzf-widgets.xsh&quot;</span>, line <span style="color: #FF6600">1</span><span style="color: #555555">&gt;</span>
+ipdb<span style="color: #555555">&gt;</span> src                                                                                                                                                                                                                                                                                             
+<span style="color: #CC3300">&#39;ls</span><span style="color: #CC3300; font-weight: bold">\n</span><span style="color: #CC3300">&#39;</span>
+</code></pre></div>
+
+
+<p>Note that <code>code</code> is apparently wrapped in some non-<code>ls</code> xontrib code I have installed. I'm unsure exactly why right now.</p>
+<p>But note that <code>src</code> is the <code>ls</code> command I typed in, followed by a newline.</p>
+<p>Once we get down to the actual appending, we see that <code>ts0</code> and <code>ts1</code> are the start and end timestamps of the code's execution. <code>tee_out</code> is simply the output of the command.</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #555555">--&gt;</span> <span style="color: #FF6600">377</span>             <span style="color: #336666">self</span><span style="color: #555555">.</span>_append_history(inp<span style="color: #555555">=</span>src, ts<span style="color: #555555">=</span>[ts0, ts1], tee_out<span style="color: #555555">=</span>tee_out)
+    <span style="color: #FF6600">378</span>             <span style="color: #336666">self</span><span style="color: #555555">.</span>accumulated_inputs <span style="color: #555555">+=</span> src
+    <span style="color: #FF6600">379</span>             <span style="color: #006699; font-weight: bold">if</span> (
+    <span style="color: #FF6600">380</span>                 tee_out
+    <span style="color: #FF6600">381</span>                 <span style="color: #000000; font-weight: bold">and</span> env<span style="color: #555555">.</span>get(<span style="color: #CC3300">&quot;XONSH_APPEND_NEWLINE&quot;</span>)
+    <span style="color: #FF6600">382</span>                 <span style="color: #000000; font-weight: bold">and</span> <span style="color: #000000; font-weight: bold">not</span> tee_out<span style="color: #555555">.</span>endswith(os<span style="color: #555555">.</span>linesep)
+    <span style="color: #FF6600">383</span>             ):
+    <span style="color: #FF6600">384</span>                 <span style="color: #336666">print</span>(os<span style="color: #555555">.</span>linesep, end<span style="color: #555555">=</span><span style="color: #CC3300">&quot;&quot;</span>)
+    <span style="color: #FF6600">385</span>             tee<span style="color: #555555">.</span>close()
+    <span style="color: #FF6600">386</span>             <span style="color: #336666">self</span><span style="color: #555555">.</span>_fix_cwd()
+    <span style="color: #FF6600">387</span>         <span style="color: #006699; font-weight: bold">if</span> builtins<span style="color: #555555">.</span>__xonsh__<span style="color: #555555">.</span>exit:  <span style="color: #0099FF; font-style: italic"># pylint: disable=no-member</span>
+    <span style="color: #FF6600">388</span>             <span style="color: #006699; font-weight: bold">return</span> <span style="color: #006699; font-weight: bold">True</span>
+    <span style="color: #FF6600">389</span>
+
+ipdb<span style="color: #555555">&gt;</span> src                                                                                                                                                                                                                                                                                             
+<span style="color: #CC3300">&#39;ls</span><span style="color: #CC3300; font-weight: bold">\n</span><span style="color: #CC3300">&#39;</span>
+ipdb<span style="color: #555555">&gt;</span> ts0                                                                                                                                                                                                                                                                                             
+<span style="color: #FF6600">1560283660.1879137</span>
+ipdb<span style="color: #555555">&gt;</span> ts1                                                                                                                                                                                                                                                                                             
+<span style="color: #FF6600">1560283660.3324323</span>
+</code></pre></div>
+
+
+<p>Let's step into <code>_append_history()</code>:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #006699; font-weight: bold">def</span> <span style="color: #CC00FF">_append_history</span>(<span style="color: #336666">self</span>, tee_out<span style="color: #555555">=</span><span style="color: #006699; font-weight: bold">None</span>, <span style="color: #555555">**</span>info):
+    <span style="color: #CC3300; font-style: italic">&quot;&quot;&quot;Append information about the command to the history.</span>
+
+<span style="color: #CC3300; font-style: italic">    This also handles on_postcommand because this is the place where all the</span>
+<span style="color: #CC3300; font-style: italic">    information is available.</span>
+<span style="color: #CC3300; font-style: italic">    &quot;&quot;&quot;</span>
+    hist <span style="color: #555555">=</span> builtins<span style="color: #555555">.</span>__xonsh__<span style="color: #555555">.</span>history  <span style="color: #0099FF; font-style: italic"># pylint: disable=no-member</span>
+    info[<span style="color: #CC3300">&quot;rtn&quot;</span>] <span style="color: #555555">=</span> hist<span style="color: #555555">.</span>last_cmd_rtn <span style="color: #006699; font-weight: bold">if</span> hist <span style="color: #000000; font-weight: bold">is</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #006699; font-weight: bold">None</span> <span style="color: #006699; font-weight: bold">else</span> <span style="color: #006699; font-weight: bold">None</span>
+    tee_out <span style="color: #555555">=</span> tee_out <span style="color: #000000; font-weight: bold">or</span> <span style="color: #006699; font-weight: bold">None</span>
+    last_out <span style="color: #555555">=</span> hist<span style="color: #555555">.</span>last_cmd_out <span style="color: #006699; font-weight: bold">if</span> hist <span style="color: #000000; font-weight: bold">is</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #006699; font-weight: bold">None</span> <span style="color: #006699; font-weight: bold">else</span> <span style="color: #006699; font-weight: bold">None</span>
+    <span style="color: #006699; font-weight: bold">if</span> last_out <span style="color: #000000; font-weight: bold">is</span> <span style="color: #006699; font-weight: bold">None</span> <span style="color: #000000; font-weight: bold">and</span> tee_out <span style="color: #000000; font-weight: bold">is</span> <span style="color: #006699; font-weight: bold">None</span>:
+        <span style="color: #006699; font-weight: bold">pass</span>
+    <span style="color: #006699; font-weight: bold">elif</span> last_out <span style="color: #000000; font-weight: bold">is</span> <span style="color: #006699; font-weight: bold">None</span> <span style="color: #000000; font-weight: bold">and</span> tee_out <span style="color: #000000; font-weight: bold">is</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #006699; font-weight: bold">None</span>:
+        info[<span style="color: #CC3300">&quot;out&quot;</span>] <span style="color: #555555">=</span> tee_out
+    <span style="color: #006699; font-weight: bold">elif</span> last_out <span style="color: #000000; font-weight: bold">is</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #006699; font-weight: bold">None</span> <span style="color: #000000; font-weight: bold">and</span> tee_out <span style="color: #000000; font-weight: bold">is</span> <span style="color: #006699; font-weight: bold">None</span>:
+        info[<span style="color: #CC3300">&quot;out&quot;</span>] <span style="color: #555555">=</span> last_out
+    <span style="color: #006699; font-weight: bold">else</span>:
+        info[<span style="color: #CC3300">&quot;out&quot;</span>] <span style="color: #555555">=</span> tee_out <span style="color: #555555">+</span> <span style="color: #CC3300">&quot;</span><span style="color: #CC3300; font-weight: bold">\n</span><span style="color: #CC3300">&quot;</span> <span style="color: #555555">+</span> last_out
+    events<span style="color: #555555">.</span>on_postcommand<span style="color: #555555">.</span>fire(
+        cmd<span style="color: #555555">=</span>info[<span style="color: #CC3300">&quot;inp&quot;</span>], rtn<span style="color: #555555">=</span>info[<span style="color: #CC3300">&quot;rtn&quot;</span>], out<span style="color: #555555">=</span>info<span style="color: #555555">.</span>get(<span style="color: #CC3300">&quot;out&quot;</span>, <span style="color: #006699; font-weight: bold">None</span>), ts<span style="color: #555555">=</span>info[<span style="color: #CC3300">&quot;ts&quot;</span>]
+    )
+    <span style="color: #006699; font-weight: bold">if</span> hist <span style="color: #000000; font-weight: bold">is</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #006699; font-weight: bold">None</span>:
+        hist<span style="color: #555555">.</span>append(info)
+        hist<span style="color: #555555">.</span>last_cmd_rtn <span style="color: #555555">=</span> hist<span style="color: #555555">.</span>last_cmd_out <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">None</span>
+</code></pre></div>
+
+
+<p>It isn't the most exciting code. It is really just a matter of adding return code information for failed commands and, if available, the output of the command, to the <code>info</code> (history entry) provided to the backend. As a funny aside most of this method is a heuristic for deciding whether to use tee output or <code>last_cmd_out</code> from the history backend, which <code>last_cmd_out</code> seems to be an unused property in at least all the built-in history backends. Would be interesting to know why it ever existed at all!</p>
+<p>The crucial thing we learn here, though, is that <code>info</code> is effectively what we've been calling the history entry. It is the "packet" (concretely, a <code>dict</code>) of information that is appended to the history. It defines what our history backend can save, delete, search, manipulate, etc. So any additional information we would need to add for our history backend would have to be added to <code>info</code>.</p>
+<p>Let's take a look at the <code>info</code> object for two different cases. In the first, I'll call <code>ls</code> in a directory with exactly one <em>empty</em> regular file: <code>test</code>, and in the second I'll call <code>grep something test</code> in the same directory. The <code>ls</code> call will provide a successful return value and the <code>grep</code> call will not (since <code>test</code> will be empty).</p>
+<p>Calling <code>ls</code>:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>{<span style="color: #CC3300">&#39;inp&#39;</span>: <span style="color: #CC3300">&#39;ls</span><span style="color: #CC3300; font-weight: bold">\n</span><span style="color: #CC3300">&#39;</span>, <span style="color: #CC3300">&#39;ts&#39;</span>: [<span style="color: #FF6600">1560285242.9592671</span>, <span style="color: #FF6600">1560285243.0506482</span>], <span style="color: #CC3300">&#39;rtn&#39;</span>: <span style="color: #FF6600">0</span>, <span style="color: #CC3300">&#39;out&#39;</span>: <span style="color: #CC3300">&#39;test</span><span style="color: #CC3300; font-weight: bold">\n</span><span style="color: #CC3300">&#39;</span>}
+</code></pre></div>
+
+
+<p>Calling <code>grep something test</code>:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>{<span style="color: #CC3300">&#39;inp&#39;</span>: <span style="color: #CC3300">&#39;grep something test</span><span style="color: #CC3300; font-weight: bold">\n</span><span style="color: #CC3300">&#39;</span>, <span style="color: #CC3300">&#39;ts&#39;</span>: [<span style="color: #FF6600">1560285373.0232306</span>, <span style="color: #FF6600">1560285373.125136</span>], <span style="color: #CC3300">&#39;rtn&#39;</span>: <span style="color: #FF6600">1</span>}
+</code></pre></div>
+
+
+<p>There you have it - all the information available to a history backend's <code>append()</code> method as far as I can tell.</p>
+<h2>Thoughts on where I should go</h2>
+<p>So I've been digging around in here to ultimately change what history items are loaded when a user interactively scrolls through the history, uses the <code>history</code> command, etc., with the aim of showing only the history items that are associated with the current working directory. To do that, I have to get <code>cwd</code> information into each history item.</p>
+<p>To fast-forward a bit, I've now done that, and it's pretty simple, though it did require a change to the xonsh source code:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #003300; font-weight: bold">diff --git a/xonsh/base_shell.py b/xonsh/base_shell.py</span>
+<span style="color: #003300; font-weight: bold">index b7e9aff2..7088427f 100644</span>
+<span style="background-color: #FFCCCC; border: 1px solid #CC0000">--- a/xonsh/base_shell.py</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+++ b/xonsh/base_shell.py</span>
+<span style="color: #003300; font-weight: bold">@@ -393,6 +393,8 @@ class BaseShell(object):</span>
+         &quot;&quot;&quot;
+         hist = builtins.__xonsh__.history  # pylint: disable=no-member
+         info[&quot;rtn&quot;] = hist.last_cmd_rtn if hist is not None else None
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+        if builtins.__xonsh__.env.get(&quot;XONSH_STORE_CWD&quot;):</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+            info[&#39;cwd&#39;] = os.getcwd()</span>
+         tee_out = tee_out or None
+         last_out = hist.last_cmd_out if hist is not None else None
+         if last_out is None and tee_out is None:
+</code></pre></div>
+
+
+<p>Luckily, when I had asked whether such a xontrib as <code>per-directory-history</code> existed yet, xonsh creator <a href="https://github.com/scopatz">Anthony Scopatz</a> told me he'd be up for modifying the history mechanism to support this kind of xontrib, so we're good here.</p>
+<p>The next question I had was how I could make history:</p>
+<ul>
+<li>aware of this new information</li>
+<li>optionally able to use this information by installing a xontrib</li>
+<li>hopefully prompt-backend agnostic</li>
+</ul>
+<p>To make history aware of this new info, I had to alter the history backends - each history backend has a different way of handling the attributes of history items. I decided to follow a depth-first way of experimenting, hoping that if I got my history functionality working with <code>JsonHistory</code>, probably the most commonly used backend, I could either figure out how to get it working with other backends, or (less good) just make my xontrib available to people using the <code>JsonHistory</code> backend.</p>
+<p>Next, I looked at where history strings are loaded by xonsh, so that I could start limiting the items loaded to those that matched by <code>cwd</code>. My thought was that each time history was searched by the user, by whatever mechanism, if I found the point where history strings were loaded, I could filter out those that didn't match.</p>
+<p>I thought that creating a history backend with an overridden method would help since custom history backends are easily pluggable with the <code>XONSH_HISTORY_BACKEND</code> environment varible, thus making any solution that used a custom one pretty easily installable via a xontrib.</p>
+<p>Unfortunately there was no clear and easy way to override the history backend functionality to filter out history entries on arbitrary criteria, so I added yet another thing to the xonsh source:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #003300; font-weight: bold">diff --git a/xonsh/history/json.py b/xonsh/history/json.py</span>
+<span style="color: #003300; font-weight: bold">index 50b6326b..7313cfc9 100644</span>
+<span style="background-color: #FFCCCC; border: 1px solid #CC0000">--- a/xonsh/history/json.py</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+++ b/xonsh/history/json.py</span>
+<span style="color: #003300; font-weight: bold">@@ -328,6 +328,7 @@ class JsonHistory(History):</span>
+<span style="background-color: #FFCCCC; border: 1px solid #CC0000">--- a/xonsh/history/json.py</span>
+<span style="background-color: #FFCCCC; border: 1px solid #CC0000">--- a/xonsh/history/json.py</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+++ b/xonsh/history/json.py</span>
+<span style="color: #003300; font-weight: bold">@@ -328,6 +328,7 @@ class JsonHistory(History):</span>
+         self.tss = JsonCommandField(&quot;ts&quot;, self)
+         self.inps = JsonCommandField(&quot;inp&quot;, self)
+         self.outs = JsonCommandField(&quot;out&quot;, self)
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+        self.cwds = JsonCommandField(&quot;cwd&quot;, self)</span>
+         self.rtns = JsonCommandField(&quot;rtn&quot;, self)
+
+     def __len__(self):
+<span style="color: #003300; font-weight: bold">@@ -382,10 +383,11 @@ class JsonHistory(History):</span>
+     def items(self, newest_first=False):
+         &quot;&quot;&quot;Display history items of current session.&quot;&quot;&quot;
+         if newest_first:
+<span style="background-color: #FFCCCC; border: 1px solid #CC0000">-            items = zip(reversed(self.inps), reversed(self.tss))</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+            items = zip(</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+                reversed(self.inps), reversed(self.tss), reversed(self.cwds))</span>
+         else:
+<span style="background-color: #FFCCCC; border: 1px solid #CC0000">-            items = zip(self.inps, self.tss)</span>
+<span style="background-color: #FFCCCC; border: 1px solid #CC0000">-        for item, tss in items:</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+            items = zip(self.inps, self.tss, self.cwds)</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+        for item, tss, _ in items:</span>
+             yield {&quot;inp&quot;: item.rstrip(), &quot;ts&quot;: tss[0]}
+
+     def all_items(self, newest_first=False, **kwargs):
+<span style="color: #003300; font-weight: bold">@@ -413,10 +415,16 @@ class JsonHistory(History):</span>
+             if newest_first:
+                 commands = reversed(commands)
+             for c in commands:
+<span style="background-color: #FFCCCC; border: 1px solid #CC0000">-                yield {&quot;inp&quot;: c[&quot;inp&quot;].rstrip(), &quot;ts&quot;: c[&quot;ts&quot;][0]}</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+                if self._include_history_item(c):</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+                    yield {&quot;inp&quot;: c[&quot;inp&quot;].rstrip(), &quot;ts&quot;: c[&quot;ts&quot;][0]}</span>
+         # all items should also include session items
+         yield from self.items()
+
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+    def _include_history_item(self, item):</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+        &quot;&quot;&quot;Whether to include the history item.</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+        Allows filtering history results by subclass.&quot;&quot;&quot;</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+        return True</span>
+<span style="background-color: #CCFFCC; border: 1px solid #00CC00">+</span>
+</code></pre></div>
+
+
+<p>In short, this diff just adds a method that checks whether a history item should be used, and in the default case (the <code>JsonHistory</code> base class), it simply allows all history items.</p>
+<p>In my xontrib, I created a custom history backend that performed the filtering I wanted:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #006699; font-weight: bold">class</span> <span style="color: #00AA88; font-weight: bold">JsonPerDirectoryHistory</span>(JsonHistory):
+    <span style="color: #006699; font-weight: bold">def</span> <span style="color: #CC00FF">__init__</span>(<span style="color: #336666">self</span>, <span style="color: #555555">*</span>args, <span style="color: #555555">**</span>kwargs):
+        <span style="color: #336666">super</span>()<span style="color: #555555">.</span><span style="color: #CC00FF">__init__</span>(<span style="color: #555555">*</span>args, <span style="color: #555555">**</span>kwargs)
+        <span style="color: #336666">self</span><span style="color: #555555">.</span>use_local_history <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">True</span>
+
+    <span style="color: #006699; font-weight: bold">def</span> <span style="color: #CC00FF">_include_history_item</span>(<span style="color: #336666">self</span>, item):
+        run_in_terminal(<span style="color: #006699; font-weight: bold">lambda</span>: <span style="color: #336666">print</span>(<span style="color: #CC3300">f&#39;Got item </span><span style="color: #AA0000">{</span>item<span style="color: #AA0000">}</span><span style="color: #CC3300">&#39;</span>))
+        run_in_terminal(<span style="color: #006699; font-weight: bold">lambda</span>: <span style="color: #336666">print</span>(<span style="color: #CC3300">f&#39;Use local history: </span><span style="color: #AA0000">{</span><span style="color: #336666">self</span><span style="color: #555555">.</span>use_local_history<span style="color: #AA0000">}</span><span style="color: #CC3300">&#39;</span>))
+        <span style="color: #006699; font-weight: bold">if</span> <span style="color: #336666">self</span><span style="color: #555555">.</span>use_local_history <span style="color: #000000; font-weight: bold">and</span> item<span style="color: #555555">.</span>get(<span style="color: #CC3300">&#39;cwd&#39;</span>) <span style="color: #000000; font-weight: bold">and</span> os<span style="color: #555555">.</span>getcwd() <span style="color: #555555">==</span> item<span style="color: #555555">.</span>get(<span style="color: #CC3300">&#39;cwd&#39;</span>):
+            run_in_terminal(<span style="color: #006699; font-weight: bold">lambda</span>: <span style="color: #336666">print</span>(<span style="color: #CC3300">&#39;Using item&#39;</span>))
+            <span style="color: #006699; font-weight: bold">return</span> <span style="color: #006699; font-weight: bold">True</span>
+        run_in_terminal(<span style="color: #006699; font-weight: bold">lambda</span>: <span style="color: #336666">print</span>(<span style="color: #CC3300">&#39;Not using item&#39;</span>))
+        <span style="color: #006699; font-weight: bold">return</span> <span style="color: #006699; font-weight: bold">False</span>
+</code></pre></div>
+
+
+<p>Notice in this that there are some Prompt Toolkit-specific <code>run_in_terminal</code> <code>print</code> calls, which I've added just for very verbose logging while developing. I'd remove these when releasing this xontrib, assuming I keep support for non-Prompt Toolkit shells.</p>
+<p>In the xontrib, I set a <code>prompt_toolkit2</code> keybinding to switch this functionality on and off, and to tell the user what mode they've switched to:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #006699; font-weight: bold">import</span> <span style="color: #00CCFF; font-weight: bold">os</span>
+<span style="color: #006699; font-weight: bold">from</span> <span style="color: #00CCFF; font-weight: bold">sys</span> <span style="color: #006699; font-weight: bold">import</span> stdout
+
+<span style="color: #006699; font-weight: bold">from</span> <span style="color: #00CCFF; font-weight: bold">prompt_toolkit</span> <span style="color: #006699; font-weight: bold">import</span> keys, print_formatted_text
+<span style="color: #006699; font-weight: bold">from</span> <span style="color: #00CCFF; font-weight: bold">prompt_toolkit.application</span> <span style="color: #006699; font-weight: bold">import</span> run_in_terminal
+
+<span style="color: #006699; font-weight: bold">from</span> <span style="color: #00CCFF; font-weight: bold">builtins</span> <span style="color: #006699; font-weight: bold">import</span> __xonsh__
+<span style="color: #006699; font-weight: bold">from</span> <span style="color: #00CCFF; font-weight: bold">xonsh.history.json</span> <span style="color: #006699; font-weight: bold">import</span> JsonHistory
+<span style="color: #006699; font-weight: bold">from</span> <span style="color: #00CCFF; font-weight: bold">xonsh.platform</span> <span style="color: #006699; font-weight: bold">import</span> ptk_shell_type
+
+
+<span style="color: #006699; font-weight: bold">def</span> <span style="color: #CC00FF">toggle_per_directory_history</span>():
+    <span style="color: #006699; font-weight: bold">if</span> <span style="color: #336666">isinstance</span>(__xonsh__<span style="color: #555555">.</span>history, JsonPerDirectoryHistory):
+        hist <span style="color: #555555">=</span> __xonsh__<span style="color: #555555">.</span>history
+        hist<span style="color: #555555">.</span>use_local_history <span style="color: #555555">=</span> <span style="color: #000000; font-weight: bold">not</span> hist<span style="color: #555555">.</span>use_local_history
+        <span style="color: #006699; font-weight: bold">if</span> hist<span style="color: #555555">.</span>use_local_history:
+            <span style="color: #006699; font-weight: bold">return</span> <span style="color: #CC3300">&#39;local&#39;</span>
+        <span style="color: #006699; font-weight: bold">else</span>:
+            <span style="color: #006699; font-weight: bold">return</span> <span style="color: #CC3300">&#39;global&#39;</span>
+
+
+<span style="color: #9999FF">@events</span><span style="color: #555555">.</span>on_ptk_create
+<span style="color: #006699; font-weight: bold">def</span> <span style="color: #CC00FF">custom_keybindings</span>(bindings, <span style="color: #555555">**</span>kw):
+    <span style="color: #006699; font-weight: bold">def</span> <span style="color: #CC00FF">do_nothing</span>(func):
+        <span style="color: #006699; font-weight: bold">pass</span>
+
+    <span style="color: #006699; font-weight: bold">if</span> ptk_shell_type() <span style="color: #555555">==</span> <span style="color: #CC3300">&#39;prompt_toolkit2&#39;</span>:
+        binder <span style="color: #555555">=</span> bindings<span style="color: #555555">.</span>add
+    <span style="color: #006699; font-weight: bold">else</span>:
+        binder <span style="color: #555555">=</span> bindings<span style="color: #555555">.</span>registry<span style="color: #555555">.</span>add_binding
+
+    key <span style="color: #555555">=</span> <span style="color: #AA0000; background-color: #FFAAAA">$</span>{<span style="color: #555555">...</span>}<span style="color: #555555">.</span>get(<span style="color: #CC3300">&#39;PER_DIRECTORY_HISTORY_TOGGLE&#39;</span>)
+
+    <span style="color: #9999FF">@binder</span>(key)
+    <span style="color: #006699; font-weight: bold">def</span> <span style="color: #CC00FF">switch_between_global_and_local_history</span>(_):
+        new_hist_type <span style="color: #555555">=</span> toggle_per_directory_history()
+        run_in_terminal(<span style="color: #006699; font-weight: bold">lambda</span>: <span style="color: #336666">print</span>(<span style="color: #CC3300">f&#39;Switching to </span><span style="color: #AA0000">{</span>new_hist_type<span style="color: #AA0000">}</span><span style="color: #CC3300"> history.&#39;</span>))
+</code></pre></div>
+
+
+<p>Finally, I set my history backend to my custom one in my <code>.xonshrc</code> and turned on per-directory history:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #006699; font-weight: bold">from</span> <span style="color: #00CCFF; font-weight: bold">xontrib.per_directory_history</span> <span style="color: #006699; font-weight: bold">import</span> JsonPerDirectoryHistory
+<span style="color: #AA0000; background-color: #FFAAAA">$</span>XONSH_HISTORY_BACKEND <span style="color: #555555">=</span> JsonPerDirectoryHistory
+<span style="color: #AA0000; background-color: #FFAAAA">$</span>XONSH_STORE_CWD <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">True</span>
+</code></pre></div>
+
+
+<h2>Initial results</h2>
+<p>Failure, mostly. Upon opening a <code>gnome-terminal</code> instance, I saw the debugging messages printed from my history backend, which was nice:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>Got item {&#39;cwd&#39;: &#39;/home/eddie/source/xonsh&#39;, &#39;inp&#39;: &#39;ls\n&#39;, &#39;rtn&#39;: 0, &#39;ts&#39;: [1560543198.0524652, 1560543198.1038635]}
+Use local history: True
+Not using item
+Got item {&#39;cwd&#39;: &#39;/home/eddie/source/xonsh&#39;, &#39;inp&#39;: &#39;z xonsh\n&#39;, &#39;rtn&#39;: 0, &#39;ts&#39;: [1560543197.440549, 1560543197.4461908]}
+Use local history: True
+Not using item
+Got item {&#39;cwd&#39;: &#39;/home/eddie&#39;, &#39;inp&#39;: &#39;cd ..\n&#39;, &#39;rtn&#39;: 0, &#39;ts&#39;: [1560543047.8660042, 1560543047.8693159]}
+Use local history: True
+Using item
+Got item {&#39;cwd&#39;: &#39;/home/eddie/test&#39;, &#39;inp&#39;: &#39;fancy mccheeese\n&#39;, &#39;rtn&#39;: 1, &#39;ts&#39;: [1560543038.735667, 1560543039.5000844]}
+Use local history: True
+Not using item
+Got item {&#39;cwd&#39;: &#39;/home/eddie/test&#39;, &#39;inp&#39;: &#39;cd test\n&#39;, &#39;rtn&#39;: 0, &#39;ts&#39;: [1560543024.288666, 1560543024.2920816]}
+Use local history: True
+Not using item
+Got item {&#39;cwd&#39;: &#39;/home/eddie&#39;, &#39;inp&#39;: &#39;ls\n&#39;, &#39;rtn&#39;: 0, &#39;ts&#39;: [1560543021.7835386, 1560543021.8042111]}
+Use local history: True
+Using item
+Got item {&#39;cwd&#39;: &#39;/home/eddie&#39;, &#39;inp&#39;: &#39;ls\n&#39;, &#39;rtn&#39;: 0, &#39;ts&#39;: [1560543020.0776978, 1560543020.1177895]}
+Use local history: True
+Using item
+Got item {&#39;cwd&#39;: &#39;/home/eddie/test&#39;, &#39;inp&#39;: &#39;cd test\n&#39;, &#39;rtn&#39;: 0, &#39;ts&#39;: [1560542986.1126633, 1560542986.1164727]}
+Use local history: True
+Not using item
+</code></pre></div>
+
+
+<p>My history backend was apparently being used to load existing history strings, and it was only returning those that matched the <code>cwd</code>, which, in a new <code>gnome-terminal</code> for me is <code>/home/eddie</code>. Notice how commands with <code>cwd</code> info that matches <code>/home/eddie</code> are the only history items being used.</p>
+<p>Cool. So I decided to switch to another directory. If things are working as expected, I should be able to enter history commands, go back through the history, and only get commands for this new directory. Before entering any commands in this directory, I shouldn't see any history items!</p>
+<p>But I did. I could scroll back through all the history items that my command output just said were being used. What's more, if I switched to yet another directory, I could access all the commands I'd entered in the current prompt session since opening it.</p>
+<h2>Why???</h2>
+<p>This may be specific to Prompt Toolkit, but I don't know yet. It appears xonsh uses history backends in conjunction with prompt toolkit like this:</p>
+<ol>
+<li>xonsh spins up a new shell instance in <code>xonsh/shell.py</code> when a new shell process is started</li>
+<li>xonsh creates a Prompt Toolkit instance and hands it all the history data up to this point, which, in the case of <code>JsonHistory</code>, is all the history in our JSON history files</li>
+<li>Prompt Toolkit runs the prompt</li>
+<li>Each time a command is entered, Prompt Toolkit feeds this command to the xonsh shell, which appends the command history to the history backend in use</li>
+<li>Indepedently, Prompt Toolkit maintains its own searchable/scrollable record of the history since the Prompt Toolkit instance was created</li>
+<li>The next time a shell is loaded, the previous history is given to Prompt Toolkit from the xonsh history backend.</li>
+</ol>
+<p>Do you see my problem? I had indeed changed what history items are loaded by the history backend, but I hadn't changed anything about what the Prompt Toolkit history mechanism does <em>once a shell is up and running</em>.</p>
+<h2>Where do I go from here?</h2>
+<p>I am going to bring this post to a close since it contains lots of cool info about how xonsh history backends work, but I will pick back up on my own historical exploits in another post.</p>
+    </main>
+    <aside>
+        <h1>Tags</h1>
+        <ul>
+            <li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+            <li><a href="./tag/aws.html">aws</a></li>
+            <li><a href="./tag/career.html">career</a></li>
+            <li><a href="./tag/cdk.html">cdk</a></li>
+            <li><a href="./tag/docker.html">docker</a></li>
+            <li><a href="./tag/evergreen.html">evergreen</a></li>
+            <li><a href="./tag/gardening.html">gardening</a></li>
+            <li><a href="./tag/ham-radio.html">ham radio</a></li>
+            <li><a href="./tag/jsii.html">jsii</a></li>
+            <li><a href="./tag/kids.html">kids</a></li>
+            <li><a href="./tag/learning.html">learning</a></li>
+            <li><a href="./tag/linux.html">linux</a></li>
+            <li><a href="./tag/open-source.html">open source</a></li>
+            <li><a href="./tag/parenting.html">parenting</a></li>
+            <li><a href="./tag/project-management.html">project management</a></li>
+            <li><a href="./tag/projects.html">projects</a></li>
+            <li><a href="./tag/projen.html">projen</a></li>
+            <li><a href="./tag/python.html">python</a></li>
+            <li><a href="./tag/raspi.html">raspi</a></li>
+            <li><a href="./tag/resume.html">resume</a></li>
+            <li><a href="./tag/shell.html">shell</a></li>
+            <li><a href="./tag/software-development.html">software development</a></li>
+            <li><a href="./tag/ubitx.html">ubitx</a></li>
+            <li><a href="./tag/xonsh.html">xonsh</a></li>
+            <li><a href="./tag/xontribs.html">xontribs</a></li>
+        </ul>
+    </aside>
+<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
+</html>

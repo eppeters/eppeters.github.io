@@ -1,0 +1,244 @@
+/* Typesetter.css Ⓒ2012-2019 Timothy Allen
+ * https://gitlab.com/Screwtapello/typesetter-css/
+ */
+html {
+  font-size: 1em;
+  line-height: 1.25rem;
+  text-align: justify;
+  -moz-hyphens: auto;
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  hyphens: auto;
+}
+body {
+  max-width: 70rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 1.25rem;
+  padding-bottom: 3.75rem;
+  position: relative;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 1.25rem 0;
+}
+h1 {
+  font-size: 1.5em;
+  line-height: 2.5rem;
+}
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: 1.0em;
+  line-height: 1.25rem;
+}
+h1 {
+  font-weight: bold;
+  text-align: center;
+}
+h2 {
+  font-weight: bold;
+}
+h3 {
+  font-weight: inherit;
+  font-variant: small-caps;
+}
+h4 {
+  font-weight: inherit;
+  font-style: italic;
+}
+h5 {
+  font-weight: inherit;
+  font-size: 0.875em;
+}
+h6 {
+  font-weight: inherit;
+  font-size: 0.750em;
+}
+div,
+ul,
+ol,
+li,
+address,
+table,
+pre,
+nav,
+aside {
+  margin: 1.25rem 0;
+}
+p {
+  /*margin: 0*/;
+}
+/**
+p + p {
+  text-indent: 1.25rem;
+}*/
+ul,
+ol {
+  padding-left: 0;
+  margin-left: 2.5rem;
+}
+li ul,
+li ol {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+dt {
+  margin-top: 1.25rem;
+}
+dt + dt {
+  margin-top: 0;
+}
+dd {
+  margin-bottom: 1.25rem;
+  margin-left: 2.5rem;
+}
+blockquote {
+  margin: 1.25rem 2.5rem;
+}
+table {
+  margin-left: auto;
+  margin-right: auto;
+}
+thead {
+  border-bottom: 0.125rem solid currentColor;
+}
+tfoot {
+  border-top: 0.125rem solid currentColor;
+}
+thead th,
+tfoot th,
+thead td,
+tfoot td {
+  line-height: 1.125rem;
+}
+td,
+th {
+  font-size: 0.75rem;
+  padding: 0 0.625rem;
+}
+td:first-child,
+th:first-child {
+  padding-left: 0;
+}
+td:last-child,
+th:last-child {
+  padding-right: 0;
+}
+pre {
+  font-size: 0.75rem;
+}
+code {
+  hyphens: manual;
+}
+hr {
+  color: inherit;
+  margin-top: 1.125rem;
+  margin-bottom: 1.25rem;
+  border: none;
+  border-top: 0.125rem solid;
+}
+aside,
+nav {
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+aside h1,
+nav h1 {
+  font-size: 1.000rem;
+  line-height: 1.25rem;
+}
+aside :first-child,
+nav :first-child {
+  margin-top: 0;
+}
+/* By default, navigation should appear inline */
+nav {
+  text-align: center;
+  /* Flatten the navigation hierarchy */
+  /* Use vertical bars to separate each item. */
+}
+nav ul {
+  margin-left: 0;
+}
+nav ul,
+nav li {
+  display: inline;
+}
+nav li:before {
+  content: ' | ';
+}
+nav li:first-of-type:before {
+  content: '';
+}
+nav li > ul:before {
+  content: ' | ';
+}
+/*
+ * By default, asides should appear inline, but narrower because they have
+ * a smaller font size.
+ */
+aside {
+  max-width: 20rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* If we have sufficient width to put stuff on the sides... */
+@media (min-width: 65rem) {
+  main {
+    float: left;
+  }
+  aside,
+  nav {
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    width: 10rem;
+    text-align: left;
+  }
+  aside {
+    clear: right;
+    float: right;
+    margin-right: -11.25rem;
+  }
+  /* If asides aren't inline, they shouldn't disrupt paragraph indents. */
+  aside + p {
+    text-indent: 1.25rem;
+  }
+  nav {
+    text-align: left;
+    clear: left;
+    float: left;
+    margin-left: -11.25rem;
+    /* Now we have room to display the hierarchy */
+  }
+  nav ul,
+  nav li {
+    display: block;
+    margin: 0;
+  }
+  nav ul ul {
+    margin-left: 1.25rem;
+  }
+  nav li > ul:before {
+    content: '';
+  }
+  nav li:before {
+    content: '';
+  }
+}
+/* If we don't even have our minimum width, don't bother justifying. */
+@media (max-width: 35rem) {
+  html {
+    text-align: left;
+  }
+}
+/* Special support for footnotes from Pandoc */
+div.footnotes {
+  font-size: 0.75rem;
+}

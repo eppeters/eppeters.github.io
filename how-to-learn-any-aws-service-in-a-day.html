@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; How to Learn Any AWS Service in a Day</title>
+    <!-- Primary Meta Tags -->
+  <meta name="title" content="dinogalactic &mdash; How to Learn Any AWS Service in a Day">
+    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.dinogalactic.com/">
+    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="og:image" content="">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.dinogalactic.com/">
+    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="twitter:image" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./theme/css/typesetter.css" />
+    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/aws.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
+  </head>
+  <body>
+    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
+    <nav>
+        <h1>Navigation</h2>
+        <ul>
+              <li><a href="./pages/about.html">about</a></li>
+              <li><a href="./pages/booksread.html">books</a></li>
+
+              <li><a href="./category/aws.html">AWS</a></li>
+              <li><a href="./category/misc.html">misc</a></li>
+              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+        </ul>
+    </nav>
+    <main>
+<h1>How to Learn Any AWS Service in a Day</h1>
+<p>It doesn't really matter exactly how many AWS services exist - the sheer number of them is overwhelming, and (it feels like) they add more everyday. No one person can know how to use all of them.</p>
+<p>The trick to being successful long-term in the cloud, getting new gigs, and overcoming challenges is not learning every service. In fact, the title of this article is a lie. You can't learn a service in a day, or at least not in the way you'd learn it if you implemented something in it or worked with it for a year. But very often you'll need an understanding better than "I know what AWS says this service does" but nowhere near as deep as "I know where the demons are in this service."</p>
+<p>You need a structured learning process for learning new services to this level quickly. My approach start making connections in your head between the <em>objects</em> in a service and the <em>actions</em> you can take with them. In short, I am simply recommending that you build a mental graph of the parts of a service and their relationships. This article will show you how to do that and where to get the information to do so. The title is just for clickbait :)</p>
+<h2>What no one tells you about AWS</h2>
+<p>AWS isn't a bunch of products that make it easier/faster to get things done. AWS is really just a bunch of HTTP APIs. These define exactly what you can and can't do in AWS. When the next Andy Jassy says "We launched service X!" he means "We launched a new HTTP API!"</p>
+<h2>What no one tells you about the docs</h2>
+<p>No one tells you that organizations, massive ones, that use AWS are somewhere on a crawl, walk, run continuum, and the fact is that their level of maturity changes from service to service and department to department. Maybe some levels of business are completely, natively built on AWS, but maybe some data analytics teams still use on-premise data warehousing backed by batch ETL and basic ad-hoc querying with no awareness of Amazon Redshift or any of AWS's other analytics offerings. But think of how AWS convinces that one lagging line-of-business to come off that on-premise workload. The two sections of the business are so different, and the two sets of people involved so different that AWS can't rely on its overall reputation to sell services. They need a quick way to convince an org's most businessy technical staff to greenlight using each service individually. AWS doesn't try to sell products to customers based on boring things such as "You can do the same thing you're doing now, but <em>maybe</em> for cheaper!", since going to the cloud <em>might</em> be cheaper, but it might not. AWS instead targets organizations' drives to <strong>grow</strong> by promoting exciting long-range prospects for each service such as "Predictive modeling of data sourced from streams, data lakes, and more."</p>
+<p>Take this basic sales drive and combine it with the fact that the people writing AWS's documentation are very familiar with Redshift and all the cool things it can do, and the documentation ends up looking very top-down as a result. What this means is that the documentation barely tells you what the service <em>can really do</em>. In other words, yeah Sagemaker can infer deeply meaningful conclusions from terrabyte datasets, but what the heck are the pieces involved in that?</p>
+<p>On the first page of a service's docs, usually called "Getting Started," the focus is on getting customers to do something that shows results really, really quickly rather than teaching the service. (Side note: the "What is <em>Some Service</em>?" or "How <em>some service</em> works" first-pagers are usually way better and closer to what I describe here, so read those if your service has one.) AWS wants you to see the service as a nice, packaged solution rather than a bunch of building blocks that can be hooked together in different ways (and maybe not the specific way you want!). But as any experienced AWS developer can tell you, the real work of implementation requires thinking about services almost entirely in the latter way. Interesting problems aren't covered in the Getting Started guides. They also operate at an abstracted level, sort of in the way that getting a guided tour of a building is probably fine if you're visiting on vacation, but if you're there to inspect the building for safety and soundness of design, you probably want to poke around on your own first without the layer of varnish and bias that comes with a guided tour.</p>
+<blockquote>
+<p><strong>Note</strong>: I think the <a href="https://docs.aws.amazon.com/greengrass/v2/developerguide/how-it-works.html">AWS IoT Greengrass v2 "How AWS IoT Greengrass works" guide</a> is a pretty good example of how some of the first docs AWS shows to you <em>can</em> be good. I like this one particularly because of its <a href="https://docs.aws.amazon.com/greengrass/v2/developerguide/how-it-works.html#concept-overview">"Key concepts for AWS IoT Greengrass"</a> section that breaks down the big pieces of the Greengrass service and avoids all the abstraction that Getting Started guides necessarily introduce first.</p>
+</blockquote>
+<p>The rest of the AWS docs sections are usually a mixture of disjointed guides of varying depth on a smattering of topics within the service. They are packed with useful information, but if you're trying to learn really quickly, they can get you mired in the depth of one topic without giving you a survey of what the service as a whole does. Sometimes they're organized as one section per feature of the service. They're often heavily console focused, which can be a fine if time-consuming and slightly misleading way of learning a service. The biggest problem with AWS's service docs is not that they won't teach you things - they will - it's that they vary so much in structure between services that your strategy for digesting one service's docs doesn't really transfer to the next. Remember - we're trying to come up with a strategy that we can use across all the services since there are a couple hundred services to learn, so we can't waste our first moments with a service poking around in possibly fruitless areas. We need the pure, unadulterated good stuff.</p>
+<h2>Breaking the docs down</h2>
+<p>The HTTP API reference documentation is the absolute best source for learning about a service, however. I cannot stress this enough: <strong>every tool that uses this service uses this API</strong>. The only exceptions might be some behind-the-scenes APIs that the public (i.e. everyone but AWS employees) doesn't know about, but even AWS services use these API endpoints to interact with services that they depend on. Boto3, AWS CDK, any of the language SDKs, even CloudFormation and CloudFormation, use these APIs either directly or indirectly. They define absolutely and for each service the service's things and the stuff you can do to those things.</p>
+<p>The "Getting Started" documentation sections are almost story-like - they are step-by-step guides with a beginning, middle, and an end, and they're not even choose-your-own-adventure - they lead us to one end state.</p>
+<p>But once we learn how to quickly see the parts of a service and their possible connections, we can start to address interesting problems such as "What broad mitigations should my organization put in place for threats relating to Amazon Redshift?," a question that could never be answered from the top-down documentation unless a specific docs page covered it (which is possible!). Sure, months or years of experience building and operating Redshift clusters could help you answer this question quickly, but not everyone answering tough questions about an AWS service for their organization has the luxury (curse?) of having used that service for a long time already.</p>
+<h2>The process</h2>
+<p>Build a mental graph with the service's objects as nodes and its actions as connections between those nodes. Finally, fill in any gaps in your understanding or search for the answers to specific questions using the prose documentation (maybe even Getting Started!).</p>
+<ol>
+<li>Focus on the API layer first. Start learning from the most fundamental parts of the service, meaning take a bottom-up approach, not a top down one. Every service has an API Reference section <a href="https://docs.aws.amazon.com/servicecatalog/latest/dg/API_Reference.html">like this one for Service Catalog</a>. If you can't find it, just google "aws [Service Name] api reference."</li>
+<li>Create nodes in your mental graph as you read through the "Actions" section. Nearly every service has <code>Create&lt;SomeObjectName&gt;</code> actions. Read these first to get an idea of what "things" the service involves and what kinds of attributes each of these things has. The request and response bodies will list these.<blockquote>
+<p><strong>Note</strong>: The <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-template-resource-type-ref.html">CloudFormation Resource and Property Types docs</a> serve a different purpose than the service's API docs, but usually they provide a quicker overview of the types of objects in a service, since part of the CloudFormation team's job is to translate each service's objects into CloudFormation resource types, so a lot of the work of identifying things in a service is already done for you. The downsides, and the reasons I don't recommend this immediately, are that CloudFormation doesn't support every service and sometimes the strange mapping between services' APIs and CloudFormation can be more confusing than helpful. But check out this very helpful list of the <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-redshift-cluster.html">CloudFormation resource types for RedShift</a>. These list the types of objects in RedShift, and you don't even have to dig through the API docs!: <img alt="Amazon RedShift resource types listing from the CloudFormation documentation" src="images/cloudformation-redshift-resource-types.png" />.</p>
+</blockquote>
+</li>
+<li>After you have a solid idea of what things you can do stuff with in the service, fill in the connections between the service's nodes with the relationships between them as described by the actions' documentation. For instance, if the request body for <code>CreateDomain</code> has a parameter called <code>SubnetIds</code> and it's <code>Required: Yes</code>, a <code>Domain</code> somehow <em>has</em> an EC2 <code>Subnet</code>. This is an inter-service connection, but the principle still holds.<blockquote>
+<p><strong>Note</strong>: Stop and read the paragraphs at the beginning of each action's docs. These are some of the most information-packed and direct docs sections in all of AWS.</p>
+</blockquote>
+</li>
+<li>Begin asking "How would I do x?" Try to make a fairly rich scenario. You want it to describe an action you could actually take first thing if you started using the service.</li>
+</ol>
+<h2>An example using Redshift</h2>
+<p>You can learn things just by reading the action list from the documentation. Take the <a href="https://docs.aws.amazon.com/redshift/latest/APIReference/API_Operations.html">list of actions for Redshift</a>, for instance:</p>
+<ul>
+<li>AcceptReservedNodeExchange</li>
+<li>AddPartner</li>
+<li>AssociateDataShareConsumer</li>
+<li>AuthorizeClusterSecurityGroupIngress</li>
+<li>AuthorizeDataShare</li>
+<li>AuthorizeEndpointAccess</li>
+<li>AuthorizeSnapshotAccess</li>
+<li>BatchDeleteClusterSnapshots</li>
+<li>BatchModifyClusterSnapshots</li>
+<li>CancelResize</li>
+<li>CopyClusterSnapshot</li>
+<li>CreateAuthenticationProfile</li>
+<li>CreateCluster</li>
+<li>CreateClusterParameterGroup</li>
+<li>CreateClusterSecurityGroup</li>
+<li>CreateClusterSnapshot</li>
+<li>CreateClusterSubnetGroup</li>
+<li>CreateEndpointAccess</li>
+<li>CreateEventSubscription</li>
+<li>CreateHsmClientCertificate</li>
+<li>CreateHsmConfiguration</li>
+<li>CreateScheduledAction</li>
+<li>CreateSnapshotCopyGrant</li>
+<li>CreateSnapshotSchedule</li>
+<li>CreateTags</li>
+<li>CreateUsageLimit</li>
+<li>DeauthorizeDataShare</li>
+<li>DeleteAuthenticationProfile</li>
+<li>DeleteCluster</li>
+<li>DeleteClusterParameterGroup</li>
+<li>DeleteClusterSecurityGroup</li>
+<li>DeleteClusterSnapshot</li>
+<li>DeleteClusterSubnetGroup</li>
+<li>DeleteEndpointAccess</li>
+<li>DeleteEventSubscription</li>
+<li>DeleteHsmClientCertificate</li>
+<li>DeleteHsmConfiguration</li>
+<li>DeletePartner</li>
+<li>DeleteScheduledAction</li>
+<li>DeleteSnapshotCopyGrant</li>
+<li>DeleteSnapshotSchedule</li>
+<li>DeleteTags</li>
+<li>DeleteUsageLimit</li>
+<li>DescribeAccountAttributes</li>
+<li>DescribeAuthenticationProfiles</li>
+<li>DescribeClusterDbRevisions</li>
+<li>DescribeClusterParameterGroups</li>
+<li>DescribeClusterParameters</li>
+<li>DescribeClusters</li>
+<li>DescribeClusterSecurityGroups</li>
+<li>DescribeClusterSnapshots</li>
+<li>DescribeClusterSubnetGroups</li>
+<li>DescribeClusterTracks</li>
+<li>DescribeClusterVersions</li>
+<li>DescribeDataShares</li>
+<li>DescribeDataSharesForConsumer</li>
+<li>DescribeDataSharesForProducer</li>
+<li>DescribeDefaultClusterParameters</li>
+<li>DescribeEndpointAccess</li>
+<li>DescribeEndpointAuthorization</li>
+<li>DescribeEventCategories</li>
+<li>DescribeEvents</li>
+<li>DescribeEventSubscriptions</li>
+<li>DescribeHsmClientCertificates</li>
+<li>DescribeHsmConfigurations</li>
+<li>DescribeLoggingStatus</li>
+<li>DescribeNodeConfigurationOptions</li>
+<li>DescribeOrderableClusterOptions</li>
+<li>DescribePartners</li>
+<li>DescribeReservedNodeExchangeStatus</li>
+<li>DescribeReservedNodeOfferings</li>
+<li>DescribeReservedNodes</li>
+<li>DescribeResize</li>
+<li>DescribeScheduledActions</li>
+<li>DescribeSnapshotCopyGrants</li>
+<li>DescribeSnapshotSchedules</li>
+<li>DescribeStorage</li>
+<li>DescribeTableRestoreStatus</li>
+<li>DescribeTags</li>
+<li>DescribeUsageLimits</li>
+<li>DisableLogging</li>
+<li>DisableSnapshotCopy</li>
+<li>DisassociateDataShareConsumer</li>
+<li>EnableLogging</li>
+<li>EnableSnapshotCopy</li>
+<li>GetClusterCredentials</li>
+<li>GetReservedNodeExchangeConfigurationOptions</li>
+<li>GetReservedNodeExchangeOfferings</li>
+<li>ModifyAquaConfiguration</li>
+<li>ModifyAuthenticationProfile</li>
+<li>ModifyCluster</li>
+<li>ModifyClusterDbRevision</li>
+<li>ModifyClusterIamRoles</li>
+<li>ModifyClusterMaintenance</li>
+<li>ModifyClusterParameterGroup</li>
+<li>ModifyClusterSnapshot</li>
+<li>ModifyClusterSnapshotSchedule</li>
+<li>ModifyClusterSubnetGroup</li>
+<li>ModifyEndpointAccess</li>
+<li>ModifyEventSubscription</li>
+<li>ModifyScheduledAction</li>
+<li>ModifySnapshotCopyRetentionPeriod</li>
+<li>ModifySnapshotSchedule</li>
+<li>ModifyUsageLimit</li>
+<li>PauseCluster</li>
+<li>PurchaseReservedNodeOffering</li>
+<li>RebootCluster</li>
+<li>RejectDataShare</li>
+<li>ResetClusterParameterGroup</li>
+<li>ResizeCluster</li>
+<li>RestoreFromClusterSnapshot</li>
+<li>RestoreTableFromClusterSnapshot</li>
+<li>ResumeCluster</li>
+<li>RevokeClusterSecurityGroupIngress</li>
+<li>RevokeEndpointAccess</li>
+<li>RevokeSnapshotAccess</li>
+<li>RotateEncryptionKey</li>
+<li>UpdatePartnerStatus</li>
+</ul>
+<p>From this list, I can quickly see that, even though the documentation says Redshift is made of Clusters and Nodes, you don't directly manage Nodes in Redshift. Applying a bit of what I know from experience in looking at AWS API documentation, I immediately realize there are no "CreateNode," "UpdateNode," or "DeleteNode" actions. I can surmise that Clusters will manage Nodes for me. Looking at the documentation for the CreateCluster endpoint and the DescribeNodeConfiguration endpoint, I see that this is indeed true and I will merely put parameters on the Cluster, and then it will manage the Nodes for me to ensure the state matches the parameters I've stated. I also see that there is no manual way to provision storage capacity via the API, though I can check on usage with "DescribeStorage." I also note that clusters can apparently be paused, rebooting, snapshotted, resized, shared through something about partnership, configured with logging, and more. I see from the CreateCluster documentation that Redshift clusters are placed in some VPC of my choosing, that I could make the very bad mistake of making my cluster publicly accessible with (apparently) one option, and more!</p>
+<p>Next, I begin poking around in the documentation for the "Create<ObjectName>" actions for each major object. Often these map almost exactly to the CloudFormation Objects (which is part of what makes starting with CloudFormation docs a good idea). Try to start with the most important Object first. You may not know this yet, but you can make a good guess and just keep going if you get it wrong. For Redshift, I think the most important object would probably be the Cluster, then maybe Parameter Groups, then probably Event Subscriptions and Scheduled Actions, and finally the Security Groups, Security Group Ingresses, and Endpoints, since I think I know what those do, but I'll still read them. So, I would first read the docs for "CreateCluster," then "CreateEventSubscription," and so on.</p>
+<p>Be sure to note important identifiers re-used throughout the API operations for each object type. For instance, in Redshift, the one that immediately jumps out at me is the <a href="https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html#API_CreateCluster_RequestParameters">Cluster Identifier</a>: "A unique identifier for the cluster. You use this identifier to refer to the cluster for any subsequent cluster operations such as deleting or modifying. The identifier also appears in the Amazon Redshift console." This is right at the top of the CreateCluster documentation, and it will probably end up being the name that we will need most often when we are referring to specific Redshift resources -- the documentation even points this out when it talks about later operations. </p>
+<p>Knowing which identifiers exist, are required by API calls that reference existing resources, and which are easily accessible for different Objects is crucial. One of my favorite examples is EC2 Instances. EC2 is often a person's first exposure to AWS, since it's the "launch a computer in the cloud" service. They use the AWS EC2 Console Wizard and get prompted for an Instance Name. But in reality, at the API level, the Name is just a tag that is applied via the EC2 API action CreateTags, so it's not a terribly useful identifier for vanilla EC2 usage.</p>
+<p>Once you have a graph sketched out, try asking questions that fill in the gaps. For instance, "How does storage capacity work with Redshift? From EC2, I am used to compute capacity being managed by instance type and storage capacity being done in EBS or (less frequently) instance volumes." The answer is not immediately obvious via the API, so it causes me to search for the answer, which doesn't seem to be explicitly stated in the Redshift documentation. Ultimately, I find by searching "Redshift storage types" that <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-clusters.html#rs-node-type-info">node types in clusters determine the storage capacity</a>.</p>
+<p>Before actually using the service, we can ask scenario-based questions, such as "How can I query my database?" There are no obvious client or connection operations available (the <code>Endpoint</code> operations relate to VPC endpoints per the API docs). By searching "How do I query a Redshift database?" I get the following, straightforward page <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/query-databases.html">"Querying a database"</a>.</p>
+<h2>Summary</h2>
+<p>We can't learn everything from the API actions, but we can get a scaffold from which to ask better questions and start filling in the gaps with experience and prose documentation. I think this method is useful for getting up to medium speed with a service in just a couple of hours. It gives a loosely structured impression of what a service does that can then be filled in by experimentation and other reading. Beyond this initial introduction, I find that (recent) blog posts about people's first experiences trying to launch a service can be really helpful since they make daunting services more accessible and often include a little comiseration, which can be invigorating.</p>
+    </main>
+    <aside>
+        <h1>Tags</h1>
+        <ul>
+            <li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+            <li><a href="./tag/aws.html">aws</a></li>
+            <li><a href="./tag/career.html">career</a></li>
+            <li><a href="./tag/cdk.html">cdk</a></li>
+            <li><a href="./tag/docker.html">docker</a></li>
+            <li><a href="./tag/evergreen.html">evergreen</a></li>
+            <li><a href="./tag/gardening.html">gardening</a></li>
+            <li><a href="./tag/ham-radio.html">ham radio</a></li>
+            <li><a href="./tag/jsii.html">jsii</a></li>
+            <li><a href="./tag/kids.html">kids</a></li>
+            <li><a href="./tag/learning.html">learning</a></li>
+            <li><a href="./tag/linux.html">linux</a></li>
+            <li><a href="./tag/open-source.html">open source</a></li>
+            <li><a href="./tag/parenting.html">parenting</a></li>
+            <li><a href="./tag/project-management.html">project management</a></li>
+            <li><a href="./tag/projects.html">projects</a></li>
+            <li><a href="./tag/projen.html">projen</a></li>
+            <li><a href="./tag/python.html">python</a></li>
+            <li><a href="./tag/raspi.html">raspi</a></li>
+            <li><a href="./tag/resume.html">resume</a></li>
+            <li><a href="./tag/shell.html">shell</a></li>
+            <li><a href="./tag/software-development.html">software development</a></li>
+            <li><a href="./tag/ubitx.html">ubitx</a></li>
+            <li><a href="./tag/xonsh.html">xonsh</a></li>
+            <li><a href="./tag/xontribs.html">xontribs</a></li>
+        </ul>
+    </aside>
+<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
+</html>

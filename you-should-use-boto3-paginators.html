@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; You should use boto3 paginators</title>
+    <!-- Primary Meta Tags -->
+  <meta name="title" content="dinogalactic &mdash; You should use boto3 paginators">
+    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.dinogalactic.com/">
+    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="og:image" content="">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.dinogalactic.com/">
+    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="twitter:image" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./theme/css/typesetter.css" />
+    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/misc.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
+  </head>
+  <body>
+    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
+    <nav>
+        <h1>Navigation</h2>
+        <ul>
+              <li><a href="./pages/about.html">about</a></li>
+              <li><a href="./pages/booksread.html">books</a></li>
+
+              <li><a href="./category/aws.html">AWS</a></li>
+              <li><a href="./category/misc.html">misc</a></li>
+              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+        </ul>
+    </nav>
+    <main>
+<h1>You should use boto3 paginators</h1>
+<p>I wanted to point out that you may want to refactor your boto code, depending
+on how much time you have, to use a paginator rather than handling the
+nextToken from the AWS API yourself. This will return an API response on each
+iteration over the paginator.</p>
+<p>Here's an example run against my personal AWS account, which only has one page of CFN stacks unfortunately:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>In [<span style="color: #FF6600">19</span>]: <span style="color: #006699; font-weight: bold">import</span> <span style="color: #00CCFF; font-weight: bold">boto3</span>                                                                                                                                                                         
+In [<span style="color: #FF6600">20</span>]: boto3<span style="color: #555555">.</span>client(<span style="color: #CC3300">&#39;cloudformation&#39;</span>)                                                                                                                                                       
+Out[<span style="color: #FF6600">20</span>]: <span style="color: #555555">&lt;</span>botocore<span style="color: #555555">.</span>client<span style="color: #555555">.</span>CloudFormation at <span style="color: #FF6600">0x7f9abc2fbaf0</span><span style="color: #555555">&gt;</span>
+In [<span style="color: #FF6600">21</span>]: cfn_client <span style="color: #555555">=</span> boto3<span style="color: #555555">.</span>client(<span style="color: #CC3300">&#39;cloudformation&#39;</span>)                                                                                                                                          
+In [<span style="color: #FF6600">23</span>]: cfn_client<span style="color: #555555">.</span>can_paginate(<span style="color: #CC3300">&#39;describe_stacks&#39;</span>) <span style="color: #0099FF; font-style: italic"># Figure out if you can paginate your desired cfn_client command before using this technique                                                                                                                                            </span>
+Out[<span style="color: #FF6600">23</span>]: <span style="color: #006699; font-weight: bold">True</span>
+In [<span style="color: #FF6600">24</span>]: paginator <span style="color: #555555">=</span> cfn_client<span style="color: #555555">.</span>get_paginator(<span style="color: #CC3300">&#39;describe_stacks&#39;</span>)                                                                                                                              
+In [<span style="color: #FF6600">29</span>]: <span style="color: #006699; font-weight: bold">for</span> resp <span style="color: #000000; font-weight: bold">in</span> paginator<span style="color: #555555">.</span>paginate(): <span style="color: #0099FF; font-style: italic"># You can also pass in any keyword args that cfn_client.describe_stacks() would take here, like paginator.paginate(StackName=&#39;blahblahblah&#39;) </span>
+    <span style="color: #555555">...</span>:     <span style="color: #336666">print</span>([stack[<span style="color: #CC3300">&#39;StackName&#39;</span>] <span style="color: #006699; font-weight: bold">for</span> stack <span style="color: #000000; font-weight: bold">in</span> resp[<span style="color: #CC3300">&#39;Stacks&#39;</span>]]) 
+    <span style="color: #555555">...</span>: 
+[<span style="color: #CC3300">&#39;chickenpi-app-epp&#39;</span>, <span style="color: #CC3300">&#39;gg-service-role&#39;</span>, <span style="color: #CC3300">&#39;chickenpi-pl-epp&#39;</span>, <span style="color: #CC3300">&#39;cfn-leaprog-trail&#39;</span>, <span style="color: #CC3300">&#39;aws-cloud9-Python-Development-Environment-f5f7b7b71b124224a4472c8768327a97&#39;</span>, <span style="color: #CC3300">&#39;aws-sam-cli-managed-default&#39;</span>]
+</code></pre></div>
+
+
+<p>Here are the boto3 <a href="https://boto3.amazonaws.com/v1/documentation/api/latest/guide/paginators.html">pagination docs</a>.</p>
+    </main>
+    <aside>
+        <h1>Tags</h1>
+        <ul>
+            <li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+            <li><a href="./tag/aws.html">aws</a></li>
+            <li><a href="./tag/career.html">career</a></li>
+            <li><a href="./tag/cdk.html">cdk</a></li>
+            <li><a href="./tag/docker.html">docker</a></li>
+            <li><a href="./tag/evergreen.html">evergreen</a></li>
+            <li><a href="./tag/gardening.html">gardening</a></li>
+            <li><a href="./tag/ham-radio.html">ham radio</a></li>
+            <li><a href="./tag/jsii.html">jsii</a></li>
+            <li><a href="./tag/kids.html">kids</a></li>
+            <li><a href="./tag/learning.html">learning</a></li>
+            <li><a href="./tag/linux.html">linux</a></li>
+            <li><a href="./tag/open-source.html">open source</a></li>
+            <li><a href="./tag/parenting.html">parenting</a></li>
+            <li><a href="./tag/project-management.html">project management</a></li>
+            <li><a href="./tag/projects.html">projects</a></li>
+            <li><a href="./tag/projen.html">projen</a></li>
+            <li><a href="./tag/python.html">python</a></li>
+            <li><a href="./tag/raspi.html">raspi</a></li>
+            <li><a href="./tag/resume.html">resume</a></li>
+            <li><a href="./tag/shell.html">shell</a></li>
+            <li><a href="./tag/software-development.html">software development</a></li>
+            <li><a href="./tag/ubitx.html">ubitx</a></li>
+            <li><a href="./tag/xonsh.html">xonsh</a></li>
+            <li><a href="./tag/xontribs.html">xontribs</a></li>
+        </ul>
+    </aside>
+<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
+</html>

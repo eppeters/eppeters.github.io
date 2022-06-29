@@ -1,0 +1,27 @@
+/* Typesetter.css Ⓒ2012-2019 Timothy Allen
+ * https://gitlab.com/Screwtapello/typesetter-css/
+ */
+html {
+  background: #fffcf0;
+  color: #333350;
+}
+:link {
+  color: #55C;
+}
+:link:hover {
+  color: #33E;
+  background: rgba(0, 0, 0, 0.1);
+}
+:visited {
+  color: #848;
+}
+:visited:hover {
+  color: #A3A;
+}
+:link:active,
+:visited:active {
+  color: #E33;
+}
+tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.1);
+}

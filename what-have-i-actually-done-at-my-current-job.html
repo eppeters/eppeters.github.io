@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; What Have I Actually Done at My Current Job?</title>
+    <!-- Primary Meta Tags -->
+  <meta name="title" content="dinogalactic &mdash; What Have I Actually Done at My Current Job?">
+    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.dinogalactic.com/">
+    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="og:image" content="">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.dinogalactic.com/">
+    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
+    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
+    <meta property="twitter:image" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./theme/css/typesetter.css" />
+    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/misc.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
+  </head>
+  <body>
+    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
+    <nav>
+        <h1>Navigation</h2>
+        <ul>
+              <li><a href="./pages/about.html">about</a></li>
+              <li><a href="./pages/booksread.html">books</a></li>
+
+              <li><a href="./category/aws.html">AWS</a></li>
+              <li><a href="./category/misc.html">misc</a></li>
+              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+        </ul>
+    </nav>
+    <main>
+<h1>What Have I Actually Done at My Current Job?</h1>
+<p>If I sat down to work on my resume any day but today, I would probably forget
+that I was the one who managed much of our development team's Omniture
+integrations at Truth Initiative Innovations.</p>
+<p>Why not create a long-lived, long-updated post that lists out these lesser
+remembered things, and maybe even some of the morer remembered things?</p>
+<p>When it's time to sit down in front of the resume etching machine, I will be ready.</p>
+<ul>
+<li>On 10-14-2020, my dev lead/acting supervisor said:<blockquote>
+<p>Thank you for handling the deploy stuff and the details for [client]
+You very consistently handle this sort of “getting the end of a project
+wrangled and live” well, and it’s been a huge load off knowing you have it</p>
+</blockquote>
+</li>
+<li>I managed the Omniture Integrations at Truth Initiative Innovations. This
+  includes classifying variables, being the person who knows the stuff about
+  how Omniture works on the team (e.g. I was one of the two people who could
+  remind people what evars and sprops were), and I'd take point on
+  troubleshooting wiley Omniture bugs (like - why wasn't some registration data
+  getting associated with a "person" in Jive, yet other stuff apparently was?).</li>
+<li>At one point, I created a webhook-based system to receive and report page view
+    events to external partners who were paying for that data.</li>
+<li>For a long while, our servers were locking up because of blocking connections
+  to our centralized (cloud) logging provider, and when the server came back
+  online (usually after a hard reboot through the console at the datacenter),
+  we would have lost all logs during that period. I fixed this by investigating
+  our rsyslog config and improving it to not drop these messages when the
+  logging provider was unavailable, and also to not block incoming syslog
+  messages during this period, thus avoiding server lockups altogether. We went
+  from "Oh my god we had better restart rsyslog soon or the server will crash"
+  to "Oh look, we got an alert that rsyslog is experiencing connection
+  problems. It will eventually come back online and send our logs to the
+  logging provider." Because of this blocking and a less than great <code>rsyslog</code>
+  configuration, our local syslog server would block applications' socket
+  connections on the <code>/dev/log</code> socket, and since many important processes
+  (such as <code>sshd</code>!) submitted syslog messages at this location, many processes
+  on the server locked up.</li>
+<li>Created an import mechanism for semi-technical business personnel to compose
+  SMS text message conversations. This involves composing a series of messages,
+  recognized regexes, responses, and API integrations as an artifact that can
+  be uploaded to multiple environments and tested before going to production.
+  This was an improvement from the method of filling out HTML forms for each
+  message and saving them in an instance/environment's DB state with no easy
+  way to replicate this in other environments. In short, I created an artifact
+  format for non-developers to use as a better interface for creating text
+  message conversations.</li>
+<li>Used a couple of Kibana cloud solutions daily to debug production issues and
+  alert on them. Also often led the charge to seriously log as much as
+  humanly/computerly possible in our apps to allow future observability. I
+  wanted people to be able to find the exact code line and related data (db
+  rows, etc.) needed to debug an issue, just by looking at the error log.</li>
+<li>Built development, staging, and production, as well as CI, infrastructure on
+  AWS EC2/RDS with Ansible and Jenkins as well as Heroku and Heroku CI. Also
+  built development infra on Docker (with and without Docker Compose) and
+  Vagrant with Ansible.</li>
+<li>Architected a move from managed multi-server, multi-app VPS hosting to AWS,
+  adding load balancing into the mix for the first time for the application.
+  Automated all AWS infrastructure creation/management in Ansible.</li>
+<li>Designed a test interface for message library admins to simulate user
+  experiences so they could gain confidence that their text messaging programs
+  would work as expected for various users up to 90 days in the future.</li>
+</ul>
+    </main>
+    <aside>
+        <h1>Tags</h1>
+        <ul>
+            <li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+            <li><a href="./tag/aws.html">aws</a></li>
+            <li><a href="./tag/career.html">career</a></li>
+            <li><a href="./tag/cdk.html">cdk</a></li>
+            <li><a href="./tag/docker.html">docker</a></li>
+            <li><a href="./tag/evergreen.html">evergreen</a></li>
+            <li><a href="./tag/gardening.html">gardening</a></li>
+            <li><a href="./tag/ham-radio.html">ham radio</a></li>
+            <li><a href="./tag/jsii.html">jsii</a></li>
+            <li><a href="./tag/kids.html">kids</a></li>
+            <li><a href="./tag/learning.html">learning</a></li>
+            <li><a href="./tag/linux.html">linux</a></li>
+            <li><a href="./tag/open-source.html">open source</a></li>
+            <li><a href="./tag/parenting.html">parenting</a></li>
+            <li><a href="./tag/project-management.html">project management</a></li>
+            <li><a href="./tag/projects.html">projects</a></li>
+            <li><a href="./tag/projen.html">projen</a></li>
+            <li><a href="./tag/python.html">python</a></li>
+            <li><a href="./tag/raspi.html">raspi</a></li>
+            <li><a href="./tag/resume.html">resume</a></li>
+            <li><a href="./tag/shell.html">shell</a></li>
+            <li><a href="./tag/software-development.html">software development</a></li>
+            <li><a href="./tag/ubitx.html">ubitx</a></li>
+            <li><a href="./tag/xonsh.html">xonsh</a></li>
+            <li><a href="./tag/xontribs.html">xontribs</a></li>
+        </ul>
+    </aside>
+<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
+</html>
