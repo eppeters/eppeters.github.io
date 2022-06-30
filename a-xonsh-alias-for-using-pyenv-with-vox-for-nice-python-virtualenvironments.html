@@ -1,54 +1,51 @@
 <!DOCTYPE html>
+
 <html>
-  <head>
-    <meta charset="UTF-8">
-      <title>dinogalactic &mdash; A xonsh alias for using pyenv with vox for nice Python virtualenvironments</title>
-    <!-- Primary Meta Tags -->
-  <meta name="title" content="dinogalactic &mdash; A xonsh alias for using pyenv with vox for nice Python virtualenvironments">
-    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.dinogalactic.com/">
-    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
-    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
-    <meta property="og:image" content="">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://www.dinogalactic.com/">
-    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
-    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
-    <meta property="twitter:image" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="./theme/css/typesetter.css" />
-    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
-    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
-    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
-  </head>
-  <body>
-    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
-    <nav>
-        <h1>Navigation</h2>
-        <ul>
-              <li><a href="./pages/about.html">about</a></li>
-              <li><a href="./pages/booksread.html">books</a></li>
-
-              <li><a href="./category/aws.html">AWS</a></li>
-              <li><a href="./category/misc.html">misc</a></li>
-              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
-        </ul>
-    </nav>
-    <main>
+<head>
+<meta charset="utf-8"/>
+<title>dinogalactic — A xonsh alias for using pyenv with vox for nice Python virtualenvironments</title>
+<!-- Primary Meta Tags -->
+<meta content="dinogalactic — A xonsh alias for using pyenv with vox for nice Python virtualenvironments" name="title"/>
+<meta content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS." name="description"/>
+<!-- Open Graph / Facebook -->
+<meta content="website" property="og:type"/>
+<meta content="https://www.dinogalactic.com/" property="og:url"/>
+<meta content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters" property="og:title"/>
+<meta content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS." property="og:description"/>
+<meta content="" property="og:image"/>
+<!-- Twitter -->
+<meta content="summary_large_image" property="twitter:card"/>
+<meta content="https://www.dinogalactic.com/" property="twitter:url"/>
+<meta content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters" property="twitter:title"/>
+<meta content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS." property="twitter:description"/>
+<meta content="" property="twitter:image"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="./theme/css/typesetter.css" rel="stylesheet"/>
+<link href="./theme/css/typesetter-extensions.css" rel="stylesheet"/>
+<link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="alternate" title="dinogalactic Full Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" rel="alternate" title="dinogalactic Categories Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/a-xonsh-alias-for-using-pyenv-with-vox-for-nice-python-virtualenvironments.html" rel="canonical"/><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "dinogalactic", "item": "https://www.dinogalactic.com"}, {"@type": "ListItem", "position": 2, "name": "A xonsh alias for using pyenv with vox for nice python virtualenvironments", "item": "https://www.dinogalactic.com/a-xonsh-alias-for-using-pyenv-with-vox-for-nice-python-virtualenvironments.html"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "author": {"@type": "Person", "name": "Eddie Peters"}, "publisher": {"@type": "Organization", "name": "dinogalactic"}, "headline": "A xonsh alias for using pyenv with vox for nice Python virtualenvironments", "about": "xonshiousness", "datePublished": "2019-05-23 08:00"}</script></head>
+<body>
+<header><a alt="dinogalactic" href="./">dinogalactic</a></header>
+<nav>
+<h1>Navigation
+<ul>
+<li><a href="./pages/about.html">about</a></li>
+<li><a href="./pages/booksread.html">books</a></li>
+<li><a href="./category/aws.html">AWS</a></li>
+<li><a href="./category/misc.html">misc</a></li>
+<li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+</ul>
+</h1></nav>
+<main>
 <h1>A xonsh alias for using pyenv with vox for nice Python virtualenvironments</h1>
 <p>Today I started migrating away from virtualenvironments created by <code>pyenv-virtualenv</code> and started managing virtualenvs with xonsh's built-in <code>vox</code> utility. (I had previously been using the same old virtualenvironments created by <code>pyenv virtualenv</code> and just activating them with <code>vox activate ~/.pyenv/versions/virtualenv_symlink'</code>, but that's for the birds.)</p>
 <p>So, one thing I wanted to do is have <code>vox</code> use my <code>pyenv</code>-detected <code>python</code> bin whenver I created new virtualenvironments, if I didn't specify an override <code>python</code> bin. In other words, I wanted stuff like the <code>.python-version</code> file and the <code>pyenv shell</code> command to be respected by <code>vox</code> without adding all that functionality to <code>vox</code> proper. This is probably a pretty specific use case, though if more people need it, lmk!</p>
 <p>I came up with an alias that wraps the original <code>vox</code> alias (that's how the <code>vox</code> command is loaded into the environment, as an alias).</p>
 <p>Before I override it, I save the previous <code>vox</code> alias in a variable - the <code>vox</code> alias normally just maps to a callable, so I saved the callable. This is because I want to call the previous <code>vox</code> functionality inside of my new alias, which I am naming <code>'vox'</code>, and I would end up with unwanted recursion if I called my new alias function from inside itself.</p>
-<table class="codehilitetable"><tr><td><div class="linenodiv" style="background-color: #f0f0f0; padding-right: 10px"><pre style="line-height: 125%">1</pre></div></td><td class="code"><div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>normal_vox <span style="color: #555555">=</span> aliases[<span style="color: #CC3300">&#39;vox&#39;</span>]
+<table class="codehilitetable"><tr><td><div class="linenodiv" style="background-color: #f0f0f0; padding-right: 10px"><pre style="line-height: 125%">1</pre></div></td><td class="code"><div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>normal_vox <span style="color: #555555">=</span> aliases[<span style="color: #CC3300">'vox'</span>]
 </code></pre></div>
 </td></tr></table>
-
 <p>Next I define a function that does a simple check for whether I had specified an interpreter in the arguments, and if not, it prepends the <code>pyenv</code>-detected <code>python</code> bin to the argument list.</p>
 <table class="codehilitetable"><tr><td><div class="linenodiv" style="background-color: #f0f0f0; padding-right: 10px"><pre style="line-height: 125%"> 1
  2
@@ -60,24 +57,22 @@
  8
  9
 10</pre></div></td><td class="code"><div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #006699; font-weight: bold">def</span> <span style="color: #CC00FF">pyenv_vox</span>(argument_list, <span style="color: #555555">**</span>kwargs):
-    <span style="color: #CC3300; font-style: italic">&quot;&quot;&quot;Use pyenv-detected python to create environments if no other interpreter is specified.&quot;&quot;&quot;</span>
-    <span style="color: #336666">print</span>(<span style="color: #CC3300">f&#39;Using alias for vox in .xonshrc&#39;</span>)
-    <span style="color: #006699; font-weight: bold">if</span> <span style="color: #336666">len</span>(argument_list) <span style="color: #000000; font-weight: bold">and</span> argument_list[<span style="color: #FF6600">0</span>] <span style="color: #555555">==</span> <span style="color: #CC3300">&#39;new&#39;</span> \
-            <span style="color: #000000; font-weight: bold">and</span> <span style="color: #CC3300">&#39;--interpreter&#39;</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #000000; font-weight: bold">in</span> argument_list \
-            <span style="color: #000000; font-weight: bold">and</span> <span style="color: #CC3300">&#39;-p&#39;</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #000000; font-weight: bold">in</span> argument_list:
+    <span style="color: #CC3300; font-style: italic">"""Use pyenv-detected python to create environments if no other interpreter is specified."""</span>
+    <span style="color: #336666">print</span>(<span style="color: #CC3300">f'Using alias for vox in .xonshrc'</span>)
+    <span style="color: #006699; font-weight: bold">if</span> <span style="color: #336666">len</span>(argument_list) <span style="color: #000000; font-weight: bold">and</span> argument_list[<span style="color: #FF6600">0</span>] <span style="color: #555555">==</span> <span style="color: #CC3300">'new'</span> \
+            <span style="color: #000000; font-weight: bold">and</span> <span style="color: #CC3300">'--interpreter'</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #000000; font-weight: bold">in</span> argument_list \
+            <span style="color: #000000; font-weight: bold">and</span> <span style="color: #CC3300">'-p'</span> <span style="color: #000000; font-weight: bold">not</span> <span style="color: #000000; font-weight: bold">in</span> argument_list:
             python <span style="color: #555555">=</span> <span style="color: #AA0000; background-color: #FFAAAA">$</span>(pyenv which python)<span style="color: #555555">.</span>strip()
-            <span style="color: #336666">print</span>(<span style="color: #CC3300">f&#39;Using pyenv-detected python to create new environment: </span><span style="color: #AA0000">{</span>python<span style="color: #AA0000">}</span><span style="color: #CC3300">&#39;</span>)
-            argument_list <span style="color: #555555">=</span> [<span style="color: #CC3300">&#39;new&#39;</span>, <span style="color: #CC3300">&#39;--interpreter&#39;</span>, python] <span style="color: #555555">+</span> argument_list[<span style="color: #FF6600">1</span>:]
+            <span style="color: #336666">print</span>(<span style="color: #CC3300">f'Using pyenv-detected python to create new environment: </span><span style="color: #AA0000">{</span>python<span style="color: #AA0000">}</span><span style="color: #CC3300">'</span>)
+            argument_list <span style="color: #555555">=</span> [<span style="color: #CC3300">'new'</span>, <span style="color: #CC3300">'--interpreter'</span>, python] <span style="color: #555555">+</span> argument_list[<span style="color: #FF6600">1</span>:]
     <span style="color: #006699; font-weight: bold">return</span> normal_vox(argument_list, <span style="color: #555555">**</span>kwargs)
 </code></pre></div>
 </td></tr></table>
-
 <p>Regardless of whether that modification is made to the argument list, it calls the original <code>vox</code> alias with the argument list, so other <code>vox</code> commands effectively pass through untouched.</p>
 <p>Finally, I set <code>aliases['vox']</code> to this new alias function.</p>
-<table class="codehilitetable"><tr><td><div class="linenodiv" style="background-color: #f0f0f0; padding-right: 10px"><pre style="line-height: 125%">1</pre></div></td><td class="code"><div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>aliases[<span style="color: #CC3300">&#39;vox&#39;</span>] <span style="color: #555555">=</span> pyenv_vox
+<table class="codehilitetable"><tr><td><div class="linenodiv" style="background-color: #f0f0f0; padding-right: 10px"><pre style="line-height: 125%">1</pre></div></td><td class="code"><div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>aliases[<span style="color: #CC3300">'vox'</span>] <span style="color: #555555">=</span> pyenv_vox
 </code></pre></div>
 </td></tr></table>
-
 <p>And, that's it. With the <code>print()</code> statements included in the alias function, you can see what happens.</p>
 <p>It works, too:</p>
 <table class="codehilitetable"><tr><td><div class="linenodiv" style="background-color: #f0f0f0; padding-right: 10px"><pre style="line-height: 125%">1
@@ -88,10 +83,9 @@
 Using <span style="color: #336666">alias</span> <span style="color: #006699; font-weight: bold">for</span> vox in .xonshrc
 Using pyenv-detected python to create new environment: /home/eddie/.pyenv/versions/3.7.3/bin/python
 Creating environment...
-Environment <span style="color: #CC3300">&#39;excitement&#39;</span> created. Activate it with <span style="color: #CC3300">&quot;vox activate excitement&quot;</span>.
+Environment <span style="color: #CC3300">'excitement'</span> created. Activate it with <span style="color: #CC3300">"vox activate excitement"</span>.
 </code></pre></div>
 </td></tr></table>
-
 <p>Other commands are untouched by the alias - well, at least not substantively. The logging still lets you know you're using the alias.</p>
 <table class="codehilitetable"><tr><td><div class="linenodiv" style="background-color: #f0f0f0; padding-right: 10px"><pre style="line-height: 125%">1
 2
@@ -106,7 +100,6 @@ excitement
 website
 </code></pre></div>
 </td></tr></table>
-
 <p>You can set up pyenv to use a specific python, and that python will be used for the virtualenv:</p>
 <table class="codehilitetable"><tr><td><div class="linenodiv" style="background-color: #f0f0f0; padding-right: 10px"><pre style="line-height: 125%"> 1
  2
@@ -154,7 +147,7 @@ eddie@eddie-ubuntu ~ $ vox new demo-3.7.3
 Using <span style="color: #336666">alias</span> <span style="color: #006699; font-weight: bold">for</span> vox in .xonshrc
 Using pyenv-detected python to create new environment: /home/eddie/.pyenv/versions/3.7.3/bin/python
 Creating environment...
-Environment <span style="color: #CC3300">&#39;demo-3.7.3&#39;</span> created. Activate it with <span style="color: #CC3300">&quot;vox activate demo-3.7.3&quot;</span>.
+Environment <span style="color: #CC3300">'demo-3.7.3'</span> created. Activate it with <span style="color: #CC3300">"vox activate demo-3.7.3"</span>.
 
 eddie@eddie-ubuntu ~ $ pyenv <span style="color: #336666">local</span> <span style="color: #FF6600">2</span>.7.15
 eddie@eddie-ubuntu ~ $ vox new demo
@@ -163,29 +156,28 @@ Using pyenv-detected python to create new environment: /home/eddie/.pyenv/versio
 Creating environment...
 New python executable in /home/eddie/.virtualenvs/demo/bin/python
 Installing setuptools, pip, wheel...done.
-Environment <span style="color: #CC3300">&#39;demo&#39;</span> created. Activate it with <span style="color: #CC3300">&quot;vox activate demo&quot;</span>.
+Environment <span style="color: #CC3300">'demo'</span> created. Activate it with <span style="color: #CC3300">"vox activate demo"</span>.
 
 eddie@eddie-ubuntu ~ $ vox activate demo
 Using <span style="color: #336666">alias</span> <span style="color: #006699; font-weight: bold">for</span> vox in .xonshrc
-Activated <span style="color: #CC3300">&quot;demo&quot;</span>.
+Activated <span style="color: #CC3300">"demo"</span>.
 
 <span style="color: #555555">(</span>demo<span style="color: #555555">)</span> eddie@eddie-ubuntu ~ $ python --version
 Python <span style="color: #FF6600">2</span>.7.15
 <span style="color: #555555">(</span>demo<span style="color: #555555">)</span> eddie@eddie-ubuntu ~ $ vox deactivate
 Using <span style="color: #336666">alias</span> <span style="color: #006699; font-weight: bold">for</span> vox in .xonshrc
-Deactivated <span style="color: #CC3300">&quot;demo&quot;</span>.
+Deactivated <span style="color: #CC3300">"demo"</span>.
 
 eddie@eddie-ubuntu ~ $ python --version
 Python <span style="color: #FF6600">2</span>.7.15
 eddie@eddie-ubuntu ~ $ vox activate demo-3.7.3
 Using <span style="color: #336666">alias</span> <span style="color: #006699; font-weight: bold">for</span> vox in .xonshrc
-Activated <span style="color: #CC3300">&quot;demo-3.7.3&quot;</span>.
+Activated <span style="color: #CC3300">"demo-3.7.3"</span>.
 
 <span style="color: #555555">(</span>demo-3.7.3<span style="color: #555555">)</span> eddie@eddie-ubuntu ~ $ python --version
 Python <span style="color: #FF6600">3</span>.7.3
 </code></pre></div>
 </td></tr></table>
-
 <p>You can still override pyenv's current python when creating virtualenvs:</p>
 <table class="codehilitetable"><tr><td><div class="linenodiv" style="background-color: #f0f0f0; padding-right: 10px"><pre style="line-height: 125%"> 1
  2
@@ -215,53 +207,52 @@ Using <span style="color: #336666">alias</span> <span style="color: #006699; fon
 Creating environment...
 New python executable in /home/eddie/.virtualenvs/demo-system-python/bin/python
 Installing setuptools, pip, wheel...done.
-Environment <span style="color: #CC3300">&#39;demo-system-python&#39;</span> created. Activate it with <span style="color: #CC3300">&quot;vox activate demo-system-python&quot;</span>.
+Environment <span style="color: #CC3300">'demo-system-python'</span> created. Activate it with <span style="color: #CC3300">"vox activate demo-system-python"</span>.
 eddie@eddie-ubuntu ~ $ /usr/bin/python --version
 Python <span style="color: #FF6600">2</span>.7.16
 eddie@eddie-ubuntu ~ $ vox activate demo-system-python
 Using <span style="color: #336666">alias</span> <span style="color: #006699; font-weight: bold">for</span> vox in .xonshrc
-Activated <span style="color: #CC3300">&quot;demo-system-python&quot;</span>.
+Activated <span style="color: #CC3300">"demo-system-python"</span>.
 <span style="color: #555555">(</span>demo-system-python<span style="color: #555555">)</span> eddie@eddie-ubuntu ~ $ python --version
 Python <span style="color: #FF6600">2</span>.7.16
 <span style="color: #555555">(</span>demo-system-python<span style="color: #555555">)</span> eddie@eddie-ubuntu ~ $ vox deactivate
 Using <span style="color: #336666">alias</span> <span style="color: #006699; font-weight: bold">for</span> vox in .xonshrc
-Deactivated <span style="color: #CC3300">&quot;demo-system-python&quot;</span>.
+Deactivated <span style="color: #CC3300">"demo-system-python"</span>.
 eddie@eddie-ubuntu ~ $ python --version
 Python <span style="color: #FF6600">2</span>.7.15
 </code></pre></div>
 </td></tr></table>
-
 <p>I'll upload the code sometime, and I'll update this page with it, hopefully, but you've got what you need :)</p>
-    </main>
-    <aside>
-        <h1>Tags</h1>
-        <ul>
-            <li><a href="./tag/amateur-radio.html">amateur radio</a></li>
-            <li><a href="./tag/aws.html">aws</a></li>
-            <li><a href="./tag/career.html">career</a></li>
-            <li><a href="./tag/cdk.html">cdk</a></li>
-            <li><a href="./tag/docker.html">docker</a></li>
-            <li><a href="./tag/evergreen.html">evergreen</a></li>
-            <li><a href="./tag/gardening.html">gardening</a></li>
-            <li><a href="./tag/ham-radio.html">ham radio</a></li>
-            <li><a href="./tag/jsii.html">jsii</a></li>
-            <li><a href="./tag/kids.html">kids</a></li>
-            <li><a href="./tag/learning.html">learning</a></li>
-            <li><a href="./tag/linux.html">linux</a></li>
-            <li><a href="./tag/open-source.html">open source</a></li>
-            <li><a href="./tag/parenting.html">parenting</a></li>
-            <li><a href="./tag/project-management.html">project management</a></li>
-            <li><a href="./tag/projects.html">projects</a></li>
-            <li><a href="./tag/projen.html">projen</a></li>
-            <li><a href="./tag/python.html">python</a></li>
-            <li><a href="./tag/raspi.html">raspi</a></li>
-            <li><a href="./tag/resume.html">resume</a></li>
-            <li><a href="./tag/shell.html">shell</a></li>
-            <li><a href="./tag/software-development.html">software development</a></li>
-            <li><a href="./tag/ubitx.html">ubitx</a></li>
-            <li><a href="./tag/xonsh.html">xonsh</a></li>
-            <li><a href="./tag/xontribs.html">xontribs</a></li>
-        </ul>
-    </aside>
-<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
+</main>
+<aside>
+<h1>Tags</h1>
+<ul>
+<li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+<li><a href="./tag/aws.html">aws</a></li>
+<li><a href="./tag/career.html">career</a></li>
+<li><a href="./tag/cdk.html">cdk</a></li>
+<li><a href="./tag/docker.html">docker</a></li>
+<li><a href="./tag/evergreen.html">evergreen</a></li>
+<li><a href="./tag/gardening.html">gardening</a></li>
+<li><a href="./tag/ham-radio.html">ham radio</a></li>
+<li><a href="./tag/jsii.html">jsii</a></li>
+<li><a href="./tag/kids.html">kids</a></li>
+<li><a href="./tag/learning.html">learning</a></li>
+<li><a href="./tag/linux.html">linux</a></li>
+<li><a href="./tag/open-source.html">open source</a></li>
+<li><a href="./tag/parenting.html">parenting</a></li>
+<li><a href="./tag/project-management.html">project management</a></li>
+<li><a href="./tag/projects.html">projects</a></li>
+<li><a href="./tag/projen.html">projen</a></li>
+<li><a href="./tag/python.html">python</a></li>
+<li><a href="./tag/raspi.html">raspi</a></li>
+<li><a href="./tag/resume.html">resume</a></li>
+<li><a href="./tag/shell.html">shell</a></li>
+<li><a href="./tag/software-development.html">software development</a></li>
+<li><a href="./tag/ubitx.html">ubitx</a></li>
+<li><a href="./tag/xonsh.html">xonsh</a></li>
+<li><a href="./tag/xontribs.html">xontribs</a></li>
+</ul>
+</aside>
+<script async="" data-goatcounter="https://dinogalactic.goatcounter.com/count" src="//gc.zgo.at/count.js"></script> </body>
 </html>

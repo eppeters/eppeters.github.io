@@ -1,45 +1,43 @@
 <!DOCTYPE html>
+
 <html>
-  <head>
-    <meta charset="UTF-8">
-      <title>dinogalactic &mdash; Writing a per-directory-history xontrib for xonsh</title>
-    <!-- Primary Meta Tags -->
-  <meta name="title" content="dinogalactic &mdash; Writing a per-directory-history xontrib for xonsh">
-    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.dinogalactic.com/">
-    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
-    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
-    <meta property="og:image" content="">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://www.dinogalactic.com/">
-    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
-    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
-    <meta property="twitter:image" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="../theme/css/typesetter.css" />
-    <link rel="stylesheet" href="../theme/css/typesetter-extensions.css" />
-    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
-    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
-  </head>
-  <body>
-    <header><a href="../" alt="dinogalactic">dinogalactic</a></header>
-    <nav>
-        <h1>Navigation</h2>
-        <ul>
-              <li><a href="../pages/about.html">about</a></li>
-              <li><a href="../pages/booksread.html">books</a></li>
-
-              <li><a href="../category/aws.html">AWS</a></li>
-              <li><a href="../category/misc.html">misc</a></li>
-              <li><a href="../category/xonshiousness.html">xonshiousness</a></li>
-        </ul>
-    </nav>
-    <main>
+<head>
+<meta charset="utf-8"/>
+<title>dinogalactic — Writing a per-directory-history xontrib for xonsh</title>
+<!-- Primary Meta Tags -->
+<meta content="dinogalactic — Writing a per-directory-history xontrib for xonsh" name="title"/>
+<meta content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS." name="description"/>
+<!-- Open Graph / Facebook -->
+<meta content="website" property="og:type"/>
+<meta content="https://www.dinogalactic.com/" property="og:url"/>
+<meta content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters" property="og:title"/>
+<meta content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS." property="og:description"/>
+<meta content="" property="og:image"/>
+<!-- Twitter -->
+<meta content="summary_large_image" property="twitter:card"/>
+<meta content="https://www.dinogalactic.com/" property="twitter:url"/>
+<meta content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters" property="twitter:title"/>
+<meta content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS." property="twitter:description"/>
+<meta content="" property="twitter:image"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="../theme/css/typesetter.css" rel="stylesheet"/>
+<link href="../theme/css/typesetter-extensions.css" rel="stylesheet"/>
+<link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="alternate" title="dinogalactic Full Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" rel="alternate" title="dinogalactic Categories Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/drafts/writing-a-per-directory-history-xontrib-for-xonsh.html" rel="canonical"/><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "dinogalactic", "item": "https://www.dinogalactic.com"}, {"@type": "ListItem", "position": 2, "name": "Drafts", "item": "https://www.dinogalactic.com/drafts"}, {"@type": "ListItem", "position": 3, "name": "Writing a per directory history xontrib for xonsh", "item": "https://www.dinogalactic.com/drafts/writing-a-per-directory-history-xontrib-for-xonsh.html"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "author": {"@type": "Person", "name": "Eddie Peters"}, "publisher": {"@type": "Organization", "name": "dinogalactic"}, "headline": "Writing a per-directory-history xontrib for xonsh", "about": "xonshiousness", "datePublished": "2019-06-18 06:00"}</script></head>
+<body>
+<header><a alt="dinogalactic" href="../">dinogalactic</a></header>
+<nav>
+<h1>Navigation
+<ul>
+<li><a href="../pages/about.html">about</a></li>
+<li><a href="../pages/booksread.html">books</a></li>
+<li><a href="../category/aws.html">AWS</a></li>
+<li><a href="../category/misc.html">misc</a></li>
+<li><a href="../category/xonshiousness.html">xonshiousness</a></li>
+</ul>
+</h1></nav>
+<main>
 <h1>Writing a per-directory-history xontrib for xonsh</h1>
 <h2>Motivation</h2>
 <p>In <a href="/digging_into_xonsh_history_backends.html">Digging into xonsh history backends</a>, I made an attempt at porting the ZSH plugin <a href="https://github.com/jimhester/per-directory-history">jimhester/per-directory-history</a> to xonsh. I tried to do this by writing a xonsh history backend that stored the <code>pwd</code> a historical command was executed with, and I attempted to surface only the history entries for the current <code>pwd</code> when teh history was browsed through. I ran into a major problem with this approach, though: xonsh history backends load history into the shell backend on shell startup, and they persist the history on shutdown, but they aren't used to store and surface history entries while that shell session is active. This means that my approach only loaded history entries with a <code>pwd</code> equal to whatever <code>pwd</code> the shell started with, and then after that, normal history behavior was observed. This was pretty weird and way different than what I wanted.</p>
@@ -50,36 +48,36 @@
 <p>After looking further, I found that Prompt Toolkit's <a href="https://python-prompt-toolkit.readthedocs.io/en/2.0.9/pages/reference.html#module-prompt_toolkit.buffer">Buffer class</a> manages keypress-level scrolling through the history by keeping a cache of history in its <code>_working_lines</code> property. I also found that <code>_working_lines</code> is reset everytime the prompt is redrawn (e.g. after each command finishes running). Since I didn't want to rewrite or really override any of Prompt Toolkit to build my plugin, I began thinking that I could maybe just control what history the buffer saw while it re-loaded <code>_working_lines</code>. If it only saw the history for the current <code>PWD</code> at that moment, it could load only let the user see and interact with those options! My xontrib doesn't need Prompt Toolkit history to be <code>pwd</code>-aware, really - it has to display and allow the user to interact only with a subset of history depending on their <code>pwd</code>.</p>
 <p>I got here indirectly, and I'll leave out the windy route I took, but I ended up writing a custom Xonsh/Prompt Toolkit 2 history class, extending and overriding parts of <a href="https://github.com/xonsh/xonsh/blob/b871ab60aacb2560ff97cf2db80314b19cb708a1/xonsh/ptk2/history.py#L19-L52">xonsh.history.PromptToolkitHistory</a>.</p>
 <p>In my <a href="/digging_into_xonsh_history_backends.html">Digging into xonsh history backends</a> article, I covered how history is initially loaded. Right now, we'll focus on only the case of Prompt Toolkit history, as I did in that article. When a PTK2-backed Xonsh shell starts up, Prompt Toolkit calls <code>_start_loading()</code> on whatever history object it was initialized with. Xonsh's default customized PTK2 history then asyncronously dredges out strings from the global Xonsh history backend object, such as JSONHistory</p>
-    </main>
-    <aside>
-        <h1>Tags</h1>
-        <ul>
-            <li><a href="../tag/amateur-radio.html">amateur radio</a></li>
-            <li><a href="../tag/aws.html">aws</a></li>
-            <li><a href="../tag/career.html">career</a></li>
-            <li><a href="../tag/cdk.html">cdk</a></li>
-            <li><a href="../tag/docker.html">docker</a></li>
-            <li><a href="../tag/evergreen.html">evergreen</a></li>
-            <li><a href="../tag/gardening.html">gardening</a></li>
-            <li><a href="../tag/ham-radio.html">ham radio</a></li>
-            <li><a href="../tag/jsii.html">jsii</a></li>
-            <li><a href="../tag/kids.html">kids</a></li>
-            <li><a href="../tag/learning.html">learning</a></li>
-            <li><a href="../tag/linux.html">linux</a></li>
-            <li><a href="../tag/open-source.html">open source</a></li>
-            <li><a href="../tag/parenting.html">parenting</a></li>
-            <li><a href="../tag/project-management.html">project management</a></li>
-            <li><a href="../tag/projects.html">projects</a></li>
-            <li><a href="../tag/projen.html">projen</a></li>
-            <li><a href="../tag/python.html">python</a></li>
-            <li><a href="../tag/raspi.html">raspi</a></li>
-            <li><a href="../tag/resume.html">resume</a></li>
-            <li><a href="../tag/shell.html">shell</a></li>
-            <li><a href="../tag/software-development.html">software development</a></li>
-            <li><a href="../tag/ubitx.html">ubitx</a></li>
-            <li><a href="../tag/xonsh.html">xonsh</a></li>
-            <li><a href="../tag/xontribs.html">xontribs</a></li>
-        </ul>
-    </aside>
-<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
+</main>
+<aside>
+<h1>Tags</h1>
+<ul>
+<li><a href="../tag/amateur-radio.html">amateur radio</a></li>
+<li><a href="../tag/aws.html">aws</a></li>
+<li><a href="../tag/career.html">career</a></li>
+<li><a href="../tag/cdk.html">cdk</a></li>
+<li><a href="../tag/docker.html">docker</a></li>
+<li><a href="../tag/evergreen.html">evergreen</a></li>
+<li><a href="../tag/gardening.html">gardening</a></li>
+<li><a href="../tag/ham-radio.html">ham radio</a></li>
+<li><a href="../tag/jsii.html">jsii</a></li>
+<li><a href="../tag/kids.html">kids</a></li>
+<li><a href="../tag/learning.html">learning</a></li>
+<li><a href="../tag/linux.html">linux</a></li>
+<li><a href="../tag/open-source.html">open source</a></li>
+<li><a href="../tag/parenting.html">parenting</a></li>
+<li><a href="../tag/project-management.html">project management</a></li>
+<li><a href="../tag/projects.html">projects</a></li>
+<li><a href="../tag/projen.html">projen</a></li>
+<li><a href="../tag/python.html">python</a></li>
+<li><a href="../tag/raspi.html">raspi</a></li>
+<li><a href="../tag/resume.html">resume</a></li>
+<li><a href="../tag/shell.html">shell</a></li>
+<li><a href="../tag/software-development.html">software development</a></li>
+<li><a href="../tag/ubitx.html">ubitx</a></li>
+<li><a href="../tag/xonsh.html">xonsh</a></li>
+<li><a href="../tag/xontribs.html">xontribs</a></li>
+</ul>
+</aside>
+<script async="" data-goatcounter="https://dinogalactic.goatcounter.com/count" src="//gc.zgo.at/count.js"></script> </body>
 </html>

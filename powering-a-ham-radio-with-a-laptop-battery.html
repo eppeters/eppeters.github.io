@@ -1,45 +1,43 @@
 <!DOCTYPE html>
+
 <html>
-  <head>
-    <meta charset="UTF-8">
-      <title>dinogalactic &mdash; Powering a Ham Radio with a Laptop Battery</title>
-    <!-- Primary Meta Tags -->
-  <meta name="title" content="dinogalactic &mdash; Powering a Ham Radio with a Laptop Battery">
-    <meta name="description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.dinogalactic.com/">
-    <meta property="og:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
-    <meta property="og:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
-    <meta property="og:image" content="">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://www.dinogalactic.com/">
-    <meta property="twitter:title" content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters">
-    <meta property="twitter:description" content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS.">
-    <meta property="twitter:image" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="./theme/css/typesetter.css" />
-    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
-    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
-    <link href="https://www.dinogalactic.com/feeds/misc.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
-  </head>
-  <body>
-    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
-    <nav>
-        <h1>Navigation</h2>
-        <ul>
-              <li><a href="./pages/about.html">about</a></li>
-              <li><a href="./pages/booksread.html">books</a></li>
-
-              <li><a href="./category/aws.html">AWS</a></li>
-              <li><a href="./category/misc.html">misc</a></li>
-              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
-        </ul>
-    </nav>
-    <main>
+<head>
+<meta charset="utf-8"/>
+<title>dinogalactic — Powering a Ham Radio with a Laptop Battery</title>
+<!-- Primary Meta Tags -->
+<meta content="dinogalactic — Powering a Ham Radio with a Laptop Battery" name="title"/>
+<meta content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS." name="description"/>
+<!-- Open Graph / Facebook -->
+<meta content="website" property="og:type"/>
+<meta content="https://www.dinogalactic.com/" property="og:url"/>
+<meta content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters" property="og:title"/>
+<meta content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS." property="og:description"/>
+<meta content="" property="og:image"/>
+<!-- Twitter -->
+<meta content="summary_large_image" property="twitter:card"/>
+<meta content="https://www.dinogalactic.com/" property="twitter:url"/>
+<meta content="dinogalactic - python, book, linux, amateur radio, project management, and more by Eddie Peters" property="twitter:title"/>
+<meta content="Deep dives and investigations into software and electronics projects and problems, updated whenever I get the chance. Follow with RSS." property="twitter:description"/>
+<meta content="" property="twitter:image"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="./theme/css/typesetter.css" rel="stylesheet"/>
+<link href="./theme/css/typesetter-extensions.css" rel="stylesheet"/>
+<link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="alternate" title="dinogalactic Full Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/feeds/misc.atom.xml" rel="alternate" title="dinogalactic Categories Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/powering-a-ham-radio-with-a-laptop-battery.html" rel="canonical"/><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "dinogalactic", "item": "https://www.dinogalactic.com"}, {"@type": "ListItem", "position": 2, "name": "Powering a ham radio with a laptop battery", "item": "https://www.dinogalactic.com/powering-a-ham-radio-with-a-laptop-battery.html"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "author": {"@type": "Person", "name": "Eddie Peters"}, "publisher": {"@type": "Organization", "name": "dinogalactic"}, "headline": "Powering a Ham Radio with a Laptop Battery", "about": "misc", "datePublished": "2020-05-05 22:14"}</script></head>
+<body>
+<header><a alt="dinogalactic" href="./">dinogalactic</a></header>
+<nav>
+<h1>Navigation
+<ul>
+<li><a href="./pages/about.html">about</a></li>
+<li><a href="./pages/booksread.html">books</a></li>
+<li><a href="./category/aws.html">AWS</a></li>
+<li><a href="./category/misc.html">misc</a></li>
+<li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+</ul>
+</h1></nav>
+<main>
 <h1>Powering a Ham Radio with a Laptop Battery</h1>
 <p>I recently had <a href="./debugging-an-inteference-problem-on-my-ubitx-v6.html">some bad luck with a cheap 12V power supply</a> with my <a href="https://www.hfsignals.com/index.php/ubitx-v6/">uBitx v6</a>. In short, the supply was extremely noisy across all the RF bands I wanted to use. I had said in that other post that I would buy a better power supply suitable for RF, but I don't believe you should do that when you can hack something together using parts you already have, especially when just starting out.</p>
 <p>I poached the working Lithium Ion battery from the very Dell Lattitude E5540 laptop that I'm writing this on, and everything is working perfectly.</p>
@@ -56,48 +54,46 @@
 <h2>Wire the battery up to a breadboard and onto the radio</h2>
 <p>I just had to figure out which pin on my battery had to be shorted to ground to turn the battery on, since I got no voltage by simple shorting the pairs of pins on the (+) and (-) sides. Finally, I realized from the above site's pin list that my pin 6 might be something called <code>SYSPRES</code>, probably meaning <code>SYSTEM PRESENT</code>, or in human terms "This battery is not being shorted accidentally in someone's purse by their earrings - it's plugged into a laptop." Once I connected pin 6 to ground, I got a little over 12V out between (+) and (-). For safety, I added a toggle switch between pin 6 and ground.</p>
 <figure>
-  <img alt="Annotated drawing of the battery wireup job I did." src="./images/annotated_dell_laptop_battery.jpg" />
-  <figcaption>The radio turned on with zero noise - no loud helicopter blade sounds.</figcaption>
+<img alt="Annotated drawing of the battery wireup job I did." src="./images/annotated_dell_laptop_battery.jpg"/>
+<figcaption>The radio turned on with zero noise - no loud helicopter blade sounds.</figcaption>
 </figure>
-
 <h2>Turn it on</h2>
 <figure>
-<img alt="My first HF station, a uBitx v6, powered by the battery power source I hacked together." src="./images/first_hf_station.jpg" />
-  <figcaption>Here it is, turned on. Yes, right now my uBitx is in a cardboard box. Stay tuned for a future project where it might live in a nice wooden box.</figcaption>
+<img alt="My first HF station, a uBitx v6, powered by the battery power source I hacked together." src="./images/first_hf_station.jpg"/>
+<figcaption>Here it is, turned on. Yes, right now my uBitx is in a cardboard box. Stay tuned for a future project where it might live in a nice wooden box.</figcaption>
 </figure>
-
 <h2>Profit</h2>
 <p>I will keep going with this setup as long as I can. It's working, is noiseless, is free for me, and since I don't take my laptop anywhere really, is not inconvenient yet.</p>
-    </main>
-    <aside>
-        <h1>Tags</h1>
-        <ul>
-            <li><a href="./tag/amateur-radio.html">amateur radio</a></li>
-            <li><a href="./tag/aws.html">aws</a></li>
-            <li><a href="./tag/career.html">career</a></li>
-            <li><a href="./tag/cdk.html">cdk</a></li>
-            <li><a href="./tag/docker.html">docker</a></li>
-            <li><a href="./tag/evergreen.html">evergreen</a></li>
-            <li><a href="./tag/gardening.html">gardening</a></li>
-            <li><a href="./tag/ham-radio.html">ham radio</a></li>
-            <li><a href="./tag/jsii.html">jsii</a></li>
-            <li><a href="./tag/kids.html">kids</a></li>
-            <li><a href="./tag/learning.html">learning</a></li>
-            <li><a href="./tag/linux.html">linux</a></li>
-            <li><a href="./tag/open-source.html">open source</a></li>
-            <li><a href="./tag/parenting.html">parenting</a></li>
-            <li><a href="./tag/project-management.html">project management</a></li>
-            <li><a href="./tag/projects.html">projects</a></li>
-            <li><a href="./tag/projen.html">projen</a></li>
-            <li><a href="./tag/python.html">python</a></li>
-            <li><a href="./tag/raspi.html">raspi</a></li>
-            <li><a href="./tag/resume.html">resume</a></li>
-            <li><a href="./tag/shell.html">shell</a></li>
-            <li><a href="./tag/software-development.html">software development</a></li>
-            <li><a href="./tag/ubitx.html">ubitx</a></li>
-            <li><a href="./tag/xonsh.html">xonsh</a></li>
-            <li><a href="./tag/xontribs.html">xontribs</a></li>
-        </ul>
-    </aside>
-<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
+</main>
+<aside>
+<h1>Tags</h1>
+<ul>
+<li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+<li><a href="./tag/aws.html">aws</a></li>
+<li><a href="./tag/career.html">career</a></li>
+<li><a href="./tag/cdk.html">cdk</a></li>
+<li><a href="./tag/docker.html">docker</a></li>
+<li><a href="./tag/evergreen.html">evergreen</a></li>
+<li><a href="./tag/gardening.html">gardening</a></li>
+<li><a href="./tag/ham-radio.html">ham radio</a></li>
+<li><a href="./tag/jsii.html">jsii</a></li>
+<li><a href="./tag/kids.html">kids</a></li>
+<li><a href="./tag/learning.html">learning</a></li>
+<li><a href="./tag/linux.html">linux</a></li>
+<li><a href="./tag/open-source.html">open source</a></li>
+<li><a href="./tag/parenting.html">parenting</a></li>
+<li><a href="./tag/project-management.html">project management</a></li>
+<li><a href="./tag/projects.html">projects</a></li>
+<li><a href="./tag/projen.html">projen</a></li>
+<li><a href="./tag/python.html">python</a></li>
+<li><a href="./tag/raspi.html">raspi</a></li>
+<li><a href="./tag/resume.html">resume</a></li>
+<li><a href="./tag/shell.html">shell</a></li>
+<li><a href="./tag/software-development.html">software development</a></li>
+<li><a href="./tag/ubitx.html">ubitx</a></li>
+<li><a href="./tag/xonsh.html">xonsh</a></li>
+<li><a href="./tag/xontribs.html">xontribs</a></li>
+</ul>
+</aside>
+<script async="" data-goatcounter="https://dinogalactic.goatcounter.com/count" src="//gc.zgo.at/count.js"></script> </body>
 </html>
