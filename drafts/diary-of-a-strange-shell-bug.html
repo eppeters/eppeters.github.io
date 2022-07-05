@@ -1,31 +1,32 @@
 <!DOCTYPE html>
-
 <html>
-<head>
-<meta charset="utf-8"/>
-<title>dinogalactic — Diary of a strange shell bug</title>
-<!-- Primary Meta Tags -->
-<meta content="width=device-width, initial-scale=1" name="viewport"/>
-<link href="../theme/css/typesetter.css" rel="stylesheet"/>
-<link href="../theme/css/typesetter-extensions.css" rel="stylesheet"/>
-<link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="alternate" title="dinogalactic Full Atom Feed" type="application/atom+xml"/>
-<link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" rel="alternate" title="dinogalactic Categories Atom Feed" type="application/atom+xml"/>
-<link href="https://www.dinogalactic.com/drafts/diary-of-a-strange-shell-bug.html" rel="canonical"/><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "dinogalactic", "item": "https://www.dinogalactic.com"}, {"@type": "ListItem", "position": 2, "name": "Drafts", "item": "https://www.dinogalactic.com/drafts"}, {"@type": "ListItem", "position": 3, "name": "Diary of a strange shell bug", "item": "https://www.dinogalactic.com/drafts/diary-of-a-strange-shell-bug.html"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "author": {"@type": "Person", "name": "Eddie Peters"}, "publisher": {"@type": "Organization", "name": "dinogalactic"}, "headline": "Diary of a strange shell bug", "about": "xonshiousness", "datePublished": "2019-12-04 06:00"}</script></head>
-<body>
-<header><a alt="dinogalactic" href="../">dinogalactic</a></header>
-<nav>
-<h1>Navigation</h1>
-<ul>
-<li><a href="../pages/about.html">about</a></li>
-<li><a href="../pages/booksread.html">books</a></li>
-<li><a href="../category/aws.html">AWS</a></li>
-<li><a href="../category/misc.html">misc</a></li>
-<li><a href="../category/xonshiousness.html">xonshiousness</a></li>
-</ul>
-</nav>
-<main>
+  <head>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; Diary of a strange shell bug</title>
+    <!-- Primary Meta Tags -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../theme/css/typesetter.css" />
+    <link rel="stylesheet" href="../theme/css/typesetter-extensions.css" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
+  </head>
+  <body>
+    <header><a href="../" alt="dinogalactic">dinogalactic</a></header>
+    <nav>
+        <h1>Navigation</h1>
+        <ul>
+              <li><a href="../pages/about.html">about</a></li>
+              <li><a href="../pages/booksread.html">books</a></li>
+
+              <li><a href="../category/aws.html">AWS</a></li>
+              <li><a href="../category/misc.html">misc</a></li>
+              <li><a href="../category/xonshiousness.html">xonshiousness</a></li>
+        </ul>
+    </nav>
+    <main>
 <h1>Diary of a strange shell bug</h1>
-<p><link href="/css/asciinema-player.css" rel="stylesheet" type="text/css"/></p>
+<p><link rel="stylesheet" type="text/css" href="/css/asciinema-player.css" /></p>
 <p>For a while, I've been unable to use some basic features of my usual shell, <code>xonsh</code>. So, when I need to do those things, I drop into a <code>bash</code> instance, do them, then exit. The trouble is - this happens so often now that I'm fed up, so that's why I'm spending this Tuesday evening neglecting taking out the trash or cleaning up my garage, and instead, I'm fixing a <code>xonsh</code> bug.</p>
 <p>Watch.</p>
 <p>I had trouble describing this any better than "Stuff doesn't look like it's making it into vim when I type it," but it <a href="https://github.com/xonsh/xonsh/issues/3311">turns out someone else described the issue that way</a>. So I'm fixing issue #3311. Awesome.</p>
@@ -83,36 +84,36 @@ I can grep about threadable prediction.</p>
 <p>And of course, immediately after filing this comment, I started searching for issues containing "threadable," and found that folks have been talking about this specific issue for a while in <a href="https://github.com/xonsh/xonsh/pull/3285">#3285</a>. To quote user <code>fanosta</code>, the issue creator,</p>
 <blockquote></blockquote>
 <script src="/js/asciinema-player.js"></script>
-</main>
-<aside>
-<h1>Tags</h1>
-<ul>
-<li><a href="../tag/amateur-radio.html">amateur radio</a></li>
-<li><a href="../tag/aws.html">aws</a></li>
-<li><a href="../tag/career.html">career</a></li>
-<li><a href="../tag/cdk.html">cdk</a></li>
-<li><a href="../tag/docker.html">docker</a></li>
-<li><a href="../tag/evergreen.html">evergreen</a></li>
-<li><a href="../tag/gardening.html">gardening</a></li>
-<li><a href="../tag/ham-radio.html">ham radio</a></li>
-<li><a href="../tag/jsii.html">jsii</a></li>
-<li><a href="../tag/kids.html">kids</a></li>
-<li><a href="../tag/learning.html">learning</a></li>
-<li><a href="../tag/linux.html">linux</a></li>
-<li><a href="../tag/open-source.html">open source</a></li>
-<li><a href="../tag/parenting.html">parenting</a></li>
-<li><a href="../tag/project-management.html">project management</a></li>
-<li><a href="../tag/projects.html">projects</a></li>
-<li><a href="../tag/projen.html">projen</a></li>
-<li><a href="../tag/python.html">python</a></li>
-<li><a href="../tag/raspi.html">raspi</a></li>
-<li><a href="../tag/resume.html">resume</a></li>
-<li><a href="../tag/shell.html">shell</a></li>
-<li><a href="../tag/software-development.html">software development</a></li>
-<li><a href="../tag/ubitx.html">ubitx</a></li>
-<li><a href="../tag/xonsh.html">xonsh</a></li>
-<li><a href="../tag/xontribs.html">xontribs</a></li>
-</ul>
-</aside>
-<script async="" data-goatcounter="https://dinogalactic.goatcounter.com/count" src="//gc.zgo.at/count.js"></script> </body>
+    </main>
+    <aside>
+        <h1>Tags</h1>
+        <ul>
+            <li><a href="../tag/amateur-radio.html">amateur radio</a></li>
+            <li><a href="../tag/aws.html">aws</a></li>
+            <li><a href="../tag/career.html">career</a></li>
+            <li><a href="../tag/cdk.html">cdk</a></li>
+            <li><a href="../tag/docker.html">docker</a></li>
+            <li><a href="../tag/evergreen.html">evergreen</a></li>
+            <li><a href="../tag/gardening.html">gardening</a></li>
+            <li><a href="../tag/ham-radio.html">ham radio</a></li>
+            <li><a href="../tag/jsii.html">jsii</a></li>
+            <li><a href="../tag/kids.html">kids</a></li>
+            <li><a href="../tag/learning.html">learning</a></li>
+            <li><a href="../tag/linux.html">linux</a></li>
+            <li><a href="../tag/open-source.html">open source</a></li>
+            <li><a href="../tag/parenting.html">parenting</a></li>
+            <li><a href="../tag/project-management.html">project management</a></li>
+            <li><a href="../tag/projects.html">projects</a></li>
+            <li><a href="../tag/projen.html">projen</a></li>
+            <li><a href="../tag/python.html">python</a></li>
+            <li><a href="../tag/raspi.html">raspi</a></li>
+            <li><a href="../tag/resume.html">resume</a></li>
+            <li><a href="../tag/shell.html">shell</a></li>
+            <li><a href="../tag/software-development.html">software development</a></li>
+            <li><a href="../tag/ubitx.html">ubitx</a></li>
+            <li><a href="../tag/xonsh.html">xonsh</a></li>
+            <li><a href="../tag/xontribs.html">xontribs</a></li>
+        </ul>
+    </aside>
+<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
 </html>

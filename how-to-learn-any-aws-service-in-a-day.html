@@ -1,29 +1,30 @@
 <!DOCTYPE html>
-
 <html>
-<head>
-<meta charset="utf-8"/>
-<title>dinogalactic — How to Learn Any AWS Service in a Day</title>
-<!-- Primary Meta Tags -->
-<meta content="width=device-width, initial-scale=1" name="viewport"/>
-<link href="./theme/css/typesetter.css" rel="stylesheet"/>
-<link href="./theme/css/typesetter-extensions.css" rel="stylesheet"/>
-<link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="alternate" title="dinogalactic Full Atom Feed" type="application/atom+xml"/>
-<link href="https://www.dinogalactic.com/feeds/aws.atom.xml" rel="alternate" title="dinogalactic Categories Atom Feed" type="application/atom+xml"/>
-<link href="https://www.dinogalactic.com/how-to-learn-any-aws-service-in-a-day.html" rel="canonical"/><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "dinogalactic", "item": "https://www.dinogalactic.com"}, {"@type": "ListItem", "position": 2, "name": "How to learn any aws service in a day", "item": "https://www.dinogalactic.com/how-to-learn-any-aws-service-in-a-day.html"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "author": {"@type": "Person", "name": "Eddie Peters"}, "publisher": {"@type": "Organization", "name": "dinogalactic"}, "headline": "How to Learn Any AWS Service in a Day", "about": "AWS", "datePublished": "2022-06-16 14:56"}</script></head>
-<body>
-<header><a alt="dinogalactic" href="./">dinogalactic</a></header>
-<nav>
-<h1>Navigation</h1>
-<ul>
-<li><a href="./pages/about.html">about</a></li>
-<li><a href="./pages/booksread.html">books</a></li>
-<li><a href="./category/aws.html">AWS</a></li>
-<li><a href="./category/misc.html">misc</a></li>
-<li><a href="./category/xonshiousness.html">xonshiousness</a></li>
-</ul>
-</nav>
-<main>
+  <head>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; How to Learn Any AWS Service in a Day</title>
+    <!-- Primary Meta Tags -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./theme/css/typesetter.css" />
+    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/aws.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
+  </head>
+  <body>
+    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
+    <nav>
+        <h1>Navigation</h1>
+        <ul>
+              <li><a href="./pages/about.html">about</a></li>
+              <li><a href="./pages/booksread.html">books</a></li>
+
+              <li><a href="./category/aws.html">AWS</a></li>
+              <li><a href="./category/misc.html">misc</a></li>
+              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+        </ul>
+    </nav>
+    <main>
 <h1>How to Learn Any AWS Service in a Day</h1>
 <p>It doesn't really matter exactly how many AWS services exist - the sheer number of them is overwhelming, and (it feels like) they add more everyday. No one person can know how to use all of them.</p>
 <p>The trick to being successful long-term in the cloud, getting new gigs, and overcoming challenges is not learning every service. In fact, the title of this article is a lie. You can't learn a service in a day, or at least not in the way you'd learn it if you implemented something in it or worked with it for a year. But very often you'll need an understanding better than "I know what AWS says this service does" but nowhere near as deep as "I know where the demons are in this service."</p>
@@ -47,7 +48,7 @@
 <ol>
 <li>Focus on the API layer first. Start learning from the most fundamental parts of the service, meaning take a bottom-up approach, not a top down one. Every service has an API Reference section <a href="https://docs.aws.amazon.com/servicecatalog/latest/dg/API_Reference.html">like this one for Service Catalog</a>. If you can't find it, just google "aws [Service Name] api reference."</li>
 <li>Create nodes in your mental graph as you read through the "Actions" section. Nearly every service has <code>Create&lt;SomeObjectName&gt;</code> actions. Read these first to get an idea of what "things" the service involves and what kinds of attributes each of these things has. The request and response bodies will list these.<blockquote>
-<p><strong>Note</strong>: The <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-template-resource-type-ref.html">CloudFormation Resource and Property Types docs</a> serve a different purpose than the service's API docs, but usually they provide a quicker overview of the types of objects in a service, since part of the CloudFormation team's job is to translate each service's objects into CloudFormation resource types, so a lot of the work of identifying things in a service is already done for you. The downsides, and the reasons I don't recommend this immediately, are that CloudFormation doesn't support every service and sometimes the strange mapping between services' APIs and CloudFormation can be more confusing than helpful. But check out this very helpful list of the <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-redshift-cluster.html">CloudFormation resource types for RedShift</a>. These list the types of objects in RedShift, and you don't even have to dig through the API docs!: <img alt="Amazon RedShift resource types listing from the CloudFormation documentation" src="images/cloudformation-redshift-resource-types.png"/>.</p>
+<p><strong>Note</strong>: The <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-template-resource-type-ref.html">CloudFormation Resource and Property Types docs</a> serve a different purpose than the service's API docs, but usually they provide a quicker overview of the types of objects in a service, since part of the CloudFormation team's job is to translate each service's objects into CloudFormation resource types, so a lot of the work of identifying things in a service is already done for you. The downsides, and the reasons I don't recommend this immediately, are that CloudFormation doesn't support every service and sometimes the strange mapping between services' APIs and CloudFormation can be more confusing than helpful. But check out this very helpful list of the <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-redshift-cluster.html">CloudFormation resource types for RedShift</a>. These list the types of objects in RedShift, and you don't even have to dig through the API docs!: <img alt="Amazon RedShift resource types listing from the CloudFormation documentation" src="images/cloudformation-redshift-resource-types.png" />.</p>
 </blockquote>
 </li>
 <li>After you have a solid idea of what things you can do stuff with in the service, fill in the connections between the service's nodes with the relationships between them as described by the actions' documentation. For instance, if the request body for <code>CreateDomain</code> has a parameter called <code>SubnetIds</code> and it's <code>Required: Yes</code>, a <code>Domain</code> somehow <em>has</em> an EC2 <code>Subnet</code>. This is an inter-service connection, but the principle still holds.<blockquote>
@@ -179,43 +180,43 @@
 <li>UpdatePartnerStatus</li>
 </ul>
 <p>From this list, I can quickly see that, even though the documentation says Redshift is made of Clusters and Nodes, you don't directly manage Nodes in Redshift. Applying a bit of what I know from experience in looking at AWS API documentation, I immediately realize there are no "CreateNode," "UpdateNode," or "DeleteNode" actions. I can surmise that Clusters will manage Nodes for me. Looking at the documentation for the CreateCluster endpoint and the DescribeNodeConfiguration endpoint, I see that this is indeed true and I will merely put parameters on the Cluster, and then it will manage the Nodes for me to ensure the state matches the parameters I've stated. I also see that there is no manual way to provision storage capacity via the API, though I can check on usage with "DescribeStorage." I also note that clusters can apparently be paused, rebooting, snapshotted, resized, shared through something about partnership, configured with logging, and more. I see from the CreateCluster documentation that Redshift clusters are placed in some VPC of my choosing, that I could make the very bad mistake of making my cluster publicly accessible with (apparently) one option, and more!</p>
-<p>Next, I begin poking around in the documentation for the "Create<objectname>" actions for each major object. Often these map almost exactly to the CloudFormation Objects (which is part of what makes starting with CloudFormation docs a good idea). Try to start with the most important Object first. You may not know this yet, but you can make a good guess and just keep going if you get it wrong. For Redshift, I think the most important object would probably be the Cluster, then maybe Parameter Groups, then probably Event Subscriptions and Scheduled Actions, and finally the Security Groups, Security Group Ingresses, and Endpoints, since I think I know what those do, but I'll still read them. So, I would first read the docs for "CreateCluster," then "CreateEventSubscription," and so on.</objectname></p>
+<p>Next, I begin poking around in the documentation for the "Create<ObjectName>" actions for each major object. Often these map almost exactly to the CloudFormation Objects (which is part of what makes starting with CloudFormation docs a good idea). Try to start with the most important Object first. You may not know this yet, but you can make a good guess and just keep going if you get it wrong. For Redshift, I think the most important object would probably be the Cluster, then maybe Parameter Groups, then probably Event Subscriptions and Scheduled Actions, and finally the Security Groups, Security Group Ingresses, and Endpoints, since I think I know what those do, but I'll still read them. So, I would first read the docs for "CreateCluster," then "CreateEventSubscription," and so on.</p>
 <p>Be sure to note important identifiers re-used throughout the API operations for each object type. For instance, in Redshift, the one that immediately jumps out at me is the <a href="https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html#API_CreateCluster_RequestParameters">Cluster Identifier</a>: "A unique identifier for the cluster. You use this identifier to refer to the cluster for any subsequent cluster operations such as deleting or modifying. The identifier also appears in the Amazon Redshift console." This is right at the top of the CreateCluster documentation, and it will probably end up being the name that we will need most often when we are referring to specific Redshift resources -- the documentation even points this out when it talks about later operations. </p>
 <p>Knowing which identifiers exist, are required by API calls that reference existing resources, and which are easily accessible for different Objects is crucial. One of my favorite examples is EC2 Instances. EC2 is often a person's first exposure to AWS, since it's the "launch a computer in the cloud" service. They use the AWS EC2 Console Wizard and get prompted for an Instance Name. But in reality, at the API level, the Name is just a tag that is applied via the EC2 API action CreateTags, so it's not a terribly useful identifier for vanilla EC2 usage.</p>
 <p>Once you have a graph sketched out, try asking questions that fill in the gaps. For instance, "How does storage capacity work with Redshift? From EC2, I am used to compute capacity being managed by instance type and storage capacity being done in EBS or (less frequently) instance volumes." The answer is not immediately obvious via the API, so it causes me to search for the answer, which doesn't seem to be explicitly stated in the Redshift documentation. Ultimately, I find by searching "Redshift storage types" that <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-clusters.html#rs-node-type-info">node types in clusters determine the storage capacity</a>.</p>
 <p>Before actually using the service, we can ask scenario-based questions, such as "How can I query my database?" There are no obvious client or connection operations available (the <code>Endpoint</code> operations relate to VPC endpoints per the API docs). By searching "How do I query a Redshift database?" I get the following, straightforward page <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/query-databases.html">"Querying a database"</a>.</p>
 <h2>Summary</h2>
 <p>We can't learn everything from the API actions, but we can get a scaffold from which to ask better questions and start filling in the gaps with experience and prose documentation. I think this method is useful for getting up to medium speed with a service in just a couple of hours. It gives a loosely structured impression of what a service does that can then be filled in by experimentation and other reading. Beyond this initial introduction, I find that (recent) blog posts about people's first experiences trying to launch a service can be really helpful since they make daunting services more accessible and often include a little comiseration, which can be invigorating.</p>
-</main>
-<aside>
-<h1>Tags</h1>
-<ul>
-<li><a href="./tag/amateur-radio.html">amateur radio</a></li>
-<li><a href="./tag/aws.html">aws</a></li>
-<li><a href="./tag/career.html">career</a></li>
-<li><a href="./tag/cdk.html">cdk</a></li>
-<li><a href="./tag/docker.html">docker</a></li>
-<li><a href="./tag/evergreen.html">evergreen</a></li>
-<li><a href="./tag/gardening.html">gardening</a></li>
-<li><a href="./tag/ham-radio.html">ham radio</a></li>
-<li><a href="./tag/jsii.html">jsii</a></li>
-<li><a href="./tag/kids.html">kids</a></li>
-<li><a href="./tag/learning.html">learning</a></li>
-<li><a href="./tag/linux.html">linux</a></li>
-<li><a href="./tag/open-source.html">open source</a></li>
-<li><a href="./tag/parenting.html">parenting</a></li>
-<li><a href="./tag/project-management.html">project management</a></li>
-<li><a href="./tag/projects.html">projects</a></li>
-<li><a href="./tag/projen.html">projen</a></li>
-<li><a href="./tag/python.html">python</a></li>
-<li><a href="./tag/raspi.html">raspi</a></li>
-<li><a href="./tag/resume.html">resume</a></li>
-<li><a href="./tag/shell.html">shell</a></li>
-<li><a href="./tag/software-development.html">software development</a></li>
-<li><a href="./tag/ubitx.html">ubitx</a></li>
-<li><a href="./tag/xonsh.html">xonsh</a></li>
-<li><a href="./tag/xontribs.html">xontribs</a></li>
-</ul>
-</aside>
-<script async="" data-goatcounter="https://dinogalactic.goatcounter.com/count" src="//gc.zgo.at/count.js"></script> </body>
+    </main>
+    <aside>
+        <h1>Tags</h1>
+        <ul>
+            <li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+            <li><a href="./tag/aws.html">aws</a></li>
+            <li><a href="./tag/career.html">career</a></li>
+            <li><a href="./tag/cdk.html">cdk</a></li>
+            <li><a href="./tag/docker.html">docker</a></li>
+            <li><a href="./tag/evergreen.html">evergreen</a></li>
+            <li><a href="./tag/gardening.html">gardening</a></li>
+            <li><a href="./tag/ham-radio.html">ham radio</a></li>
+            <li><a href="./tag/jsii.html">jsii</a></li>
+            <li><a href="./tag/kids.html">kids</a></li>
+            <li><a href="./tag/learning.html">learning</a></li>
+            <li><a href="./tag/linux.html">linux</a></li>
+            <li><a href="./tag/open-source.html">open source</a></li>
+            <li><a href="./tag/parenting.html">parenting</a></li>
+            <li><a href="./tag/project-management.html">project management</a></li>
+            <li><a href="./tag/projects.html">projects</a></li>
+            <li><a href="./tag/projen.html">projen</a></li>
+            <li><a href="./tag/python.html">python</a></li>
+            <li><a href="./tag/raspi.html">raspi</a></li>
+            <li><a href="./tag/resume.html">resume</a></li>
+            <li><a href="./tag/shell.html">shell</a></li>
+            <li><a href="./tag/software-development.html">software development</a></li>
+            <li><a href="./tag/ubitx.html">ubitx</a></li>
+            <li><a href="./tag/xonsh.html">xonsh</a></li>
+            <li><a href="./tag/xontribs.html">xontribs</a></li>
+        </ul>
+    </aside>
+<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
 </html>

@@ -1,29 +1,30 @@
 <!DOCTYPE html>
-
 <html>
-<head>
-<meta charset="utf-8"/>
-<title>dinogalactic — How to Write a simple xonsh xontrib</title>
-<!-- Primary Meta Tags -->
-<meta content="width=device-width, initial-scale=1" name="viewport"/>
-<link href="./theme/css/typesetter.css" rel="stylesheet"/>
-<link href="./theme/css/typesetter-extensions.css" rel="stylesheet"/>
-<link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="alternate" title="dinogalactic Full Atom Feed" type="application/atom+xml"/>
-<link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" rel="alternate" title="dinogalactic Categories Atom Feed" type="application/atom+xml"/>
-<link href="https://www.dinogalactic.com/how-to-write-a-simple-xonsh-xontrib.html" rel="canonical"/><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "dinogalactic", "item": "https://www.dinogalactic.com"}, {"@type": "ListItem", "position": 2, "name": "How to write a simple xonsh xontrib", "item": "https://www.dinogalactic.com/how-to-write-a-simple-xonsh-xontrib.html"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "author": {"@type": "Person", "name": "Eddie Peters"}, "publisher": {"@type": "Organization", "name": "dinogalactic"}, "headline": "How to Write a simple xonsh xontrib", "about": "xonshiousness", "datePublished": "2019-06-09 06:00"}</script></head>
-<body>
-<header><a alt="dinogalactic" href="./">dinogalactic</a></header>
-<nav>
-<h1>Navigation</h1>
-<ul>
-<li><a href="./pages/about.html">about</a></li>
-<li><a href="./pages/booksread.html">books</a></li>
-<li><a href="./category/aws.html">AWS</a></li>
-<li><a href="./category/misc.html">misc</a></li>
-<li><a href="./category/xonshiousness.html">xonshiousness</a></li>
-</ul>
-</nav>
-<main>
+  <head>
+    <meta charset="UTF-8">
+      <title>dinogalactic &mdash; How to Write a simple xonsh xontrib</title>
+    <!-- Primary Meta Tags -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./theme/css/typesetter.css" />
+    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
+    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
+    <link href="https://www.dinogalactic.com/feeds/xonshiousness.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
+  </head>
+  <body>
+    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
+    <nav>
+        <h1>Navigation</h1>
+        <ul>
+              <li><a href="./pages/about.html">about</a></li>
+              <li><a href="./pages/booksread.html">books</a></li>
+
+              <li><a href="./category/aws.html">AWS</a></li>
+              <li><a href="./category/misc.html">misc</a></li>
+              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+        </ul>
+    </nav>
+    <main>
 <h1>How to Write a simple xonsh xontrib</h1>
 <h2>Introduction</h2>
 <p>The <code>xonsh</code> docs have <a href="https://xon.sh/tutorial_xontrib.html">a guide on how to write
@@ -186,7 +187,7 @@ should be applicable regardless of the goal of the xontrib you are creating.</p>
 <p>This is the <code>setup.py</code> configuration I ended up with for this xontrib:</p>
 <p>```
 xontrib-per-directory-history</p>
-<hr/>
+<hr />
 <p>Per-directory history for xonsh, like zsh's
 https://github.com/jimhester/per-directory-history</p>
 <p>Restricts history to those that were executed in the current
@@ -260,13 +261,13 @@ platform but not another. For mine, I chose <code>'any'</code> because I didn't 
 introduce functionality that only works on some of xonsh's supported platforms.</p>
 <p>So, now my xontrib is installable via <code>pip</code>!</p>
 <p>```
-eddie@eddie-ubuntu ~/source/xontrib-per-directory-history master $ tree                                                                         <br/>
+eddie@eddie-ubuntu ~/source/xontrib-per-directory-history master $ tree                                                                         <br />
 .
 ├── setup.py
 └── xontrib
     └── per-directory-history.xsh</p>
 <p>1 directory, 2 files</p>
-<p>eddie@eddie-ubuntu ~/source/xontrib-per-directory-history master $ xpip install .                                                               <br/>
+<p>eddie@eddie-ubuntu ~/source/xontrib-per-directory-history master $ xpip install .                                                               <br />
 Processing /home/eddie/source/xontrib-per-directory-history
 Requirement already satisfied: xonsh&gt;=0.9.3 in /home/eddie/source/xonsh (from xontrib-per-directory-history==0.1) (0.9.3)
 xontInstalling collected packages: xontrib-per-directory-history
@@ -274,7 +275,7 @@ rib   Running setup.py install for xontrib-per-directory-history ... -ldone
 Successfully installed xontrib-per-directory-history-0.1
 aYou are using pip version 19.0.3, however version 19.1.1 is available.
 You should consider upgrading via the 'pip install --upgrade pip' command.
-eddie@eddie-ubuntu ~/source/xontrib-per-directory-history master $ xontrib load per-directory-history                                           <br/>
+eddie@eddie-ubuntu ~/source/xontrib-per-directory-history master $ xontrib load per-directory-history                                           <br />
 hello world
 ```</p>
 <p>And, yes, the only code in my xontrib's <code>.py</code> file right now is <code>print('hello world')</code>,
@@ -292,36 +293,36 @@ inspiration for what can be done in a xontrib, I suggest checking out the
 default</a>. Happy hacking!</p>
 <p>For information on sharing your xontrib with the world, check out the links in
 the introduction.</p>
-</main>
-<aside>
-<h1>Tags</h1>
-<ul>
-<li><a href="./tag/amateur-radio.html">amateur radio</a></li>
-<li><a href="./tag/aws.html">aws</a></li>
-<li><a href="./tag/career.html">career</a></li>
-<li><a href="./tag/cdk.html">cdk</a></li>
-<li><a href="./tag/docker.html">docker</a></li>
-<li><a href="./tag/evergreen.html">evergreen</a></li>
-<li><a href="./tag/gardening.html">gardening</a></li>
-<li><a href="./tag/ham-radio.html">ham radio</a></li>
-<li><a href="./tag/jsii.html">jsii</a></li>
-<li><a href="./tag/kids.html">kids</a></li>
-<li><a href="./tag/learning.html">learning</a></li>
-<li><a href="./tag/linux.html">linux</a></li>
-<li><a href="./tag/open-source.html">open source</a></li>
-<li><a href="./tag/parenting.html">parenting</a></li>
-<li><a href="./tag/project-management.html">project management</a></li>
-<li><a href="./tag/projects.html">projects</a></li>
-<li><a href="./tag/projen.html">projen</a></li>
-<li><a href="./tag/python.html">python</a></li>
-<li><a href="./tag/raspi.html">raspi</a></li>
-<li><a href="./tag/resume.html">resume</a></li>
-<li><a href="./tag/shell.html">shell</a></li>
-<li><a href="./tag/software-development.html">software development</a></li>
-<li><a href="./tag/ubitx.html">ubitx</a></li>
-<li><a href="./tag/xonsh.html">xonsh</a></li>
-<li><a href="./tag/xontribs.html">xontribs</a></li>
-</ul>
-</aside>
-<script async="" data-goatcounter="https://dinogalactic.goatcounter.com/count" src="//gc.zgo.at/count.js"></script> </body>
+    </main>
+    <aside>
+        <h1>Tags</h1>
+        <ul>
+            <li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+            <li><a href="./tag/aws.html">aws</a></li>
+            <li><a href="./tag/career.html">career</a></li>
+            <li><a href="./tag/cdk.html">cdk</a></li>
+            <li><a href="./tag/docker.html">docker</a></li>
+            <li><a href="./tag/evergreen.html">evergreen</a></li>
+            <li><a href="./tag/gardening.html">gardening</a></li>
+            <li><a href="./tag/ham-radio.html">ham radio</a></li>
+            <li><a href="./tag/jsii.html">jsii</a></li>
+            <li><a href="./tag/kids.html">kids</a></li>
+            <li><a href="./tag/learning.html">learning</a></li>
+            <li><a href="./tag/linux.html">linux</a></li>
+            <li><a href="./tag/open-source.html">open source</a></li>
+            <li><a href="./tag/parenting.html">parenting</a></li>
+            <li><a href="./tag/project-management.html">project management</a></li>
+            <li><a href="./tag/projects.html">projects</a></li>
+            <li><a href="./tag/projen.html">projen</a></li>
+            <li><a href="./tag/python.html">python</a></li>
+            <li><a href="./tag/raspi.html">raspi</a></li>
+            <li><a href="./tag/resume.html">resume</a></li>
+            <li><a href="./tag/shell.html">shell</a></li>
+            <li><a href="./tag/software-development.html">software development</a></li>
+            <li><a href="./tag/ubitx.html">ubitx</a></li>
+            <li><a href="./tag/xonsh.html">xonsh</a></li>
+            <li><a href="./tag/xontribs.html">xontribs</a></li>
+        </ul>
+    </aside>
+<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
 </html>
