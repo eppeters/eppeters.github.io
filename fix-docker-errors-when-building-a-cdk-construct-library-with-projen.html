@@ -1,57 +1,50 @@
 <!DOCTYPE html>
+
 <html>
-  <head>
-    <meta charset="UTF-8">
-      <title>dinogalactic &mdash; Fix Docker Errors When Building a CDK Construct Library with projen</title>
-    <!-- Primary Meta Tags -->
-
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="./theme/css/typesetter.css" />
-    <link rel="stylesheet" href="./theme/css/typesetter-extensions.css" />
-    <link href="https://www.dinogalactic.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Full Atom Feed" />
-    <link href="https://www.dinogalactic.com/feeds/aws.atom.xml" type="application/atom+xml" rel="alternate" title="dinogalactic Categories Atom Feed" />
-  </head>
-  <body>
-    <header><a href="./" alt="dinogalactic">dinogalactic</a></header>
-    <nav>
-        <h1>Navigation</h1>
-        <ul>
-              <li><a href="./pages/about.html">about</a></li>
-              <li><a href="./pages/booksread.html">books</a></li>
-
-              <li><a href="./category/aws.html">AWS</a></li>
-              <li><a href="./category/misc.html">misc</a></li>
-              <li><a href="./category/xonshiousness.html">xonshiousness</a></li>
-        </ul>
-    </nav>
-    <main>
+<head>
+<meta charset="utf-8"/>
+<title>dinogalactic — Fix Docker Errors When Building a CDK Construct Library with projen</title>
+<!-- Primary Meta Tags -->
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="./theme/css/typesetter.css" rel="stylesheet"/>
+<link href="./theme/css/typesetter-extensions.css" rel="stylesheet"/>
+<link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="alternate" title="dinogalactic Full Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/feeds/aws.atom.xml" rel="alternate" title="dinogalactic Categories Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/fix-docker-errors-when-building-a-cdk-construct-library-with-projen.html" rel="canonical"/><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "dinogalactic", "item": "https://www.dinogalactic.com"}, {"@type": "ListItem", "position": 2, "name": "Fix docker errors when building a cdk construct library with projen", "item": "https://www.dinogalactic.com/fix-docker-errors-when-building-a-cdk-construct-library-with-projen.html"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "author": {"@type": "Person", "name": "Eddie Peters"}, "publisher": {"@type": "Organization", "name": "dinogalactic"}, "headline": "Fix Docker Errors When Building a CDK Construct Library with projen", "about": "AWS", "datePublished": "2022-06-29 14:56"}</script><meta content="summary" name="twitter:card"/><meta content="https://www.dinogalactic.com/fix-docker-errors-when-building-a-cdk-construct-library-with-projen.html" property="og:url"/><meta content="article" property="og:type"/><meta content="Fix Docker Errors When Building a CDK Construct Library with projen" property="og:title"/><meta content="This article describes fixing an issue with Docker permissions in GitHub actions when using projen to build a JSII compatible AWS CDK Construct library." property="og:description"/><meta content="en_US" property="og:locale"/></head>
+<body>
+<header><a alt="dinogalactic" href="./">dinogalactic</a></header>
+<nav>
+<h1>Navigation</h1>
+<ul>
+<li><a href="./pages/about.html">about</a></li>
+<li><a href="./pages/booksread.html">books</a></li>
+<li><a href="./category/aws.html">AWS</a></li>
+<li><a href="./category/misc.html">misc</a></li>
+<li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+</ul>
+</nav>
+<main>
 <h1>Fix Docker Errors When Building a CDK Construct Library with projen</h1>
 <p>Recently I got the following error from a GitHub action run when using the <a href="https://projen.io/awscdk-construct.html"><code>projen</code> AWS CDK Construct Library project generator</a> while contributing to the open-source <a href="https://github.com/VerticalRelevance/control-broker/">Control Broker</a>:</p>
 <div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock
 </code></pre></div>
-
-
 <p>The CDK code that kicked off the denied Docker daemon call was the following:</p>
 <div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #006699; font-weight: bold">constructor</span>(scope: <span style="color: #007788; font-weight: bold">Construct</span>, id: <span style="color: #007788; font-weight: bold">string</span>) {
     <span style="color: #006699; font-weight: bold">super</span>(scope, id);
     <span style="color: #006699; font-weight: bold">this</span>.handler <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> PythonFunction(<span style="color: #006699; font-weight: bold">this</span>, <span style="color: #CC3300">`</span><span style="color: #AA0000">${</span>id<span style="color: #AA0000">}</span><span style="color: #CC3300">CloudFormationInputHandler`</span>, {
-      entry: <span style="color: #007788; font-weight: bold">join</span>(__dirname, <span style="color: #CC3300">&#39;lambda-function-code/cloudformation-input-handler&#39;</span>),
+      entry: <span style="color: #007788; font-weight: bold">join</span>(__dirname, <span style="color: #CC3300">'lambda-function-code/cloudformation-input-handler'</span>),
       runtime: <span style="color: #007788; font-weight: bold">Runtime.PYTHON_3_9</span>,
-      index<span style="color: #555555">:</span> <span style="color: #CC3300">&#39;lambda_function.py&#39;</span>,
-      handler<span style="color: #555555">:</span> <span style="color: #CC3300">&#39;lambda_handler&#39;</span>,
+      index<span style="color: #555555">:</span> <span style="color: #CC3300">'lambda_function.py'</span>,
+      handler<span style="color: #555555">:</span> <span style="color: #CC3300">'lambda_handler'</span>,
       timeout: <span style="color: #007788; font-weight: bold">Duration.seconds</span>(<span style="color: #FF6600">60</span>),
     });
   }
 </code></pre></div>
-
-
 <p>Note that this <code>PythonFunction</code> construct builds all the dependencies and things for a Python-based Lambda function into the Lambda code zip without requiring the user to do much of anything to make this happen. It is very intuitive. It does, however use Docker, which hadn't been a problem for me in other contexts.</p>
 <div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock
 </code></pre></div>
-
-
 <p>But I still got the above error, so I spent a long while trying to figure this out. I first discovered that one major problem was that my <code>build</code> and <code>release</code> steps, in my GitHub workflow files, which are generated by <code>projen</code>, were running inside a container. This means the Docker error I was getting was coming from inside the container that was running my GitHub job. The first clue. In my case, the GitHub job container was <a href="https://hub.docker.com/r/jsii/superchain/tags"><code>jsii/superchain</code></a>:</p>
-<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #0099FF; font-style: italic"># ~~ Generated by projen. To modify, edit .projenrc.js and run &quot;npx projen&quot;.</span>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #0099FF; font-style: italic"># ~~ Generated by projen. To modify, edit .projenrc.js and run "npx projen".</span>
 
 <span style="color: #330099; font-weight: bold">name</span>: release
 <span style="color: #330099; font-weight: bold">on</span>:
@@ -67,16 +60,14 @@
     <span style="color: #330099; font-weight: bold">outputs</span>:
       <span style="color: #330099; font-weight: bold">latest_commit</span>: ${{ steps.git_remote.outputs.latest_commit }}
     <span style="color: #330099; font-weight: bold">env</span>:
-      <span style="color: #330099; font-weight: bold">CI</span>: <span style="color: #CC3300">&quot;true&quot;</span>
+      <span style="color: #330099; font-weight: bold">CI</span>: <span style="color: #CC3300">"true"</span>
     <span style="color: #330099; font-weight: bold">steps</span>:
-      <span style="color: #0099FF; font-style: italic"># I&#39;ve remove steps just to shorten this snippet</span>
+      <span style="color: #0099FF; font-style: italic"># I've remove steps just to shorten this snippet</span>
       - <span style="color: #330099; font-weight: bold">name</span>: release
         <span style="color: #330099; font-weight: bold">run</span>: npx projen release
     <span style="color: #330099; font-weight: bold">container</span>:
       <span style="color: #330099; font-weight: bold">image</span>: jsii/superchain:1-buster-slim-node14
 </code></pre></div>
-
-
 <p><code>npx projen release</code> does a lot of things, but one of the things it does is run Jest tests. This was the part that was raising the permissions error regarding the Docker daemon socket. I started troubleshooting. At first I thought it was impossible to access the docker API from within a GitHub action, but that was quickly disproven when I remembered that I had done it before in a GitHub action, albeit outside a container (i.e. on the GitHub job's host, meaning in a job that did not have the <code>container</code> option set).</p>
 <p>I then tried another angle. I realized that the container might not have access to the Docker socket because it hadn't been mapped into the container's filesystem. I decided to change the <code>container</code> configuration to the following:</p>
 <div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #330099; font-weight: bold">container</span>:
@@ -84,21 +75,15 @@
     <span style="color: #330099; font-weight: bold">volumes</span>:
         - /var/run/docker.sock:/var/run/docker.sock
 </code></pre></div>
-
-
 <p>Surely this would work! Now the socket file actually exists within my job container.</p>
 <div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock
 </code></pre></div>
-
-
 <p>Same error.</p>
 <p>I then stepped back for a moment and considered the error message. As is so often the case, the error message contained all the information I needed from the start, but I didn't realize that until digging around, wracking my brain, and taking a break. It's kind of like good movies -- usually the first scene contains most of the information of the movie, but you don't know how to interpret the presentation just yet. But that's enough about the philosophy of error messages.</p>
 <p>A real breakthrough came when I inspected the Dockerfile for the <code>jsii/superchain</code> container.</p>
 <p>Critically, I found the following line within the <a href="https://hub.docker.com/layers/superchain/jsii/superchain/1-buster-slim-node14/images/sha256-42f80a4fa82100da20770dbaabcae30526e30a0e263f5fa9151b2df3f701540d?context=explore">Dockerfile</a>, and I immediately knew it to be the culprit.</p>
 <div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #006699; font-weight: bold">USER</span><span style="color: #CC3300"> superchain:superchain</span>
 </code></pre></div>
-
-
 <p>A different user besides <code>root</code> wouldn't have the permissions to access the Docker daemon, so this container image is incompatible with building Docker images on GitHub actions.</p>
 <p>But how could this be possible? Doesn't the CDK package all kinds of assets inside of Docker containers, including (like my use case) the code for Lambda functions? Indeed, it does.</p>
 <p>For a moment I thought I would have to rewrite my Lambda functions in Typescript so they could be built with <code>esbuild</code> outside of a container, but then I got sad because that would mean that I couldn't use things like Lambda layers in my Construct, since those could also need (or at least benefit from using) Docker to build them.</p>
@@ -109,108 +94,100 @@
 </blockquote>
 <p>But I digress. I finally saw the light and came up with a different approach that had many benefits.</p>
 <p>Here is the test code that instantiated the <code>PythonLambda</code> construct, though indirectly through the <code>new CloudFormationInputHandler()</code> call:</p>
-<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>test(<span style="color: #CC3300">&#39;ControlBroker can be created and attached to a stack&#39;</span>, () <span style="color: #555555">=&gt;</span> {
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>test(<span style="color: #CC3300">'ControlBroker can be created and attached to a stack'</span>, () <span style="color: #555555">=&gt;</span> {
   <span style="color: #006699; font-weight: bold">const</span> stack <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> Stack();
-  <span style="color: #006699; font-weight: bold">const</span> api <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> Api(stack, <span style="color: #CC3300">&#39;ControlbrokerApi&#39;</span>, {});
+  <span style="color: #006699; font-weight: bold">const</span> api <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> Api(stack, <span style="color: #CC3300">'ControlbrokerApi'</span>, {});
 
-  <span style="color: #006699; font-weight: bold">const</span> cfnInputHandler <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> CloudFormationInputHandler(stack, <span style="color: #CC3300">&#39;CfnInputHandler&#39;</span>);
+  <span style="color: #006699; font-weight: bold">const</span> cfnInputHandler <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> CloudFormationInputHandler(stack, <span style="color: #CC3300">'CfnInputHandler'</span>);
   <span style="color: #0099FF; font-style: italic">// ^^ The above instantiates the PythonLambda construct and kicks off the</span>
   <span style="color: #0099FF; font-style: italic">// ^^ Docker daemon calls during bundling (which happens BEFORE synth!)</span>
 
-  <span style="color: #006699; font-weight: bold">const</span> cfnInputHandlerApiBinding <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> HttpApiBinding(<span style="color: #CC3300">&#39;CloudFormation&#39;</span>, api, cfnInputHandler);
-  <span style="color: #006699; font-weight: bold">const</span> evalEngine <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> OpaEvalEngine(stack, <span style="color: #CC3300">&#39;EvalEngine&#39;</span>);
-  <span style="color: #006699; font-weight: bold">const</span> evalEngineBinding <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> HttpApiBinding(<span style="color: #CC3300">&#39;EvalEngine&#39;</span>, api, evalEngine);
+  <span style="color: #006699; font-weight: bold">const</span> cfnInputHandlerApiBinding <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> HttpApiBinding(<span style="color: #CC3300">'CloudFormation'</span>, api, cfnInputHandler);
+  <span style="color: #006699; font-weight: bold">const</span> evalEngine <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> OpaEvalEngine(stack, <span style="color: #CC3300">'EvalEngine'</span>);
+  <span style="color: #006699; font-weight: bold">const</span> evalEngineBinding <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> HttpApiBinding(<span style="color: #CC3300">'EvalEngine'</span>, api, evalEngine);
   api.setEvalEngine(evalEngine, evalEngineBinding);
   api.addInputHandler(cfnInputHandler, cfnInputHandlerApiBinding);
-  <span style="color: #006699; font-weight: bold">new</span> ControlBroker(stack, <span style="color: #CC3300">&#39;TestControlBroker&#39;</span>, {
+  <span style="color: #006699; font-weight: bold">new</span> ControlBroker(stack, <span style="color: #CC3300">'TestControlBroker'</span>, {
     api,
   });
 });
 </code></pre></div>
-
-
 <p>Why do I have to <strong>instantiate</strong> my constructs that need Docker for bundling within my unit tests? Why not just mock those (or at least the bundling part) out and thereby avoid the Docker building. It would definitely cut down on test execution time, after all, and arguably actual Lambda function bundling belongs to the consumers of the Constructs rather than the Construct library itself. Perhaps a custom integration testing phase could do this bundling as part of a test deployment or something, but there was no need to do this during the packaging and release process of my Construct library. It would also reduce the number of dependencies needed to run my tests and build my library (because it would remove Docker).</p>
 <p>So I sought a way to mock out the bundling part of my Lambda functions in my unit tests.</p>
 <p>I came up with the following, which mocks the <code>PythonLambda</code> class, skipping any bundling:</p>
-<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #006699; font-weight: bold">import</span> { PythonFunction } from <span style="color: #CC3300">&#39;@aws-cdk/aws-lambda-python-alpha&#39;</span>;
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #006699; font-weight: bold">import</span> { PythonFunction } from <span style="color: #CC3300">'@aws-cdk/aws-lambda-python-alpha'</span>;
 
-jest.mock(<span style="color: #CC3300">&#39;@aws-cdk/aws-lambda-python-alpha&#39;</span>);
+jest.mock(<span style="color: #CC3300">'@aws-cdk/aws-lambda-python-alpha'</span>);
 
 <span style="color: #006699; font-weight: bold">const</span> mockedPythonFunction <span style="color: #555555">=</span> <span style="color: #555555">&lt;</span>jest.Mock<span style="color: #555555">&lt;</span><span style="color: #006699; font-weight: bold">typeof</span> PythonFunction<span style="color: #555555">&gt;&gt;</span>(PythonFunction <span style="color: #006699; font-weight: bold">as</span> unknown);
 mockedPythonFunction.mockImplementation(() <span style="color: #555555">=&gt;</span> {
-  <span style="color: #006699; font-weight: bold">const</span> original <span style="color: #555555">=</span> jest.requireActual(<span style="color: #CC3300">&#39;@aws-cdk/aws-lambda-python-alpha&#39;</span>);
+  <span style="color: #006699; font-weight: bold">const</span> original <span style="color: #555555">=</span> jest.requireActual(<span style="color: #CC3300">'@aws-cdk/aws-lambda-python-alpha'</span>);
   <span style="color: #006699; font-weight: bold">return</span> {
     ...original.PythonFunction,
-    functionArn<span style="color: #555555">:</span> <span style="color: #CC3300">&#39;arn:aws:lambda:us-east-1:123456789012:function:mockfunction&#39;</span>,
+    functionArn<span style="color: #555555">:</span> <span style="color: #CC3300">'arn:aws:lambda:us-east-1:123456789012:function:mockfunction'</span>,
     addPermission<span style="color: #555555">:</span> () <span style="color: #555555">=&gt;</span> {},
   };
 });
 
-test(<span style="color: #CC3300">&#39;ControlBroker can be created and attached to a stack&#39;</span>, () <span style="color: #555555">=&gt;</span> {
+test(<span style="color: #CC3300">'ControlBroker can be created and attached to a stack'</span>, () <span style="color: #555555">=&gt;</span> {
   <span style="color: #006699; font-weight: bold">const</span> stack <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> Stack();
-  <span style="color: #006699; font-weight: bold">const</span> api <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> Api(stack, <span style="color: #CC3300">&#39;ControlbrokerApi&#39;</span>, {});
-  <span style="color: #006699; font-weight: bold">const</span> cfnInputHandler <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> CloudFormationInputHandler(stack, <span style="color: #CC3300">&#39;CfnInputHandler&#39;</span>);
-  <span style="color: #006699; font-weight: bold">const</span> cfnInputHandlerApiBinding <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> HttpApiBinding(<span style="color: #CC3300">&#39;CloudFormation&#39;</span>, api, cfnInputHandler);
-  <span style="color: #006699; font-weight: bold">const</span> evalEngine <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> OpaEvalEngine(stack, <span style="color: #CC3300">&#39;EvalEngine&#39;</span>);
-  <span style="color: #006699; font-weight: bold">const</span> evalEngineBinding <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> HttpApiBinding(<span style="color: #CC3300">&#39;EvalEngine&#39;</span>, api, evalEngine);
+  <span style="color: #006699; font-weight: bold">const</span> api <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> Api(stack, <span style="color: #CC3300">'ControlbrokerApi'</span>, {});
+  <span style="color: #006699; font-weight: bold">const</span> cfnInputHandler <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> CloudFormationInputHandler(stack, <span style="color: #CC3300">'CfnInputHandler'</span>);
+  <span style="color: #006699; font-weight: bold">const</span> cfnInputHandlerApiBinding <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> HttpApiBinding(<span style="color: #CC3300">'CloudFormation'</span>, api, cfnInputHandler);
+  <span style="color: #006699; font-weight: bold">const</span> evalEngine <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> OpaEvalEngine(stack, <span style="color: #CC3300">'EvalEngine'</span>);
+  <span style="color: #006699; font-weight: bold">const</span> evalEngineBinding <span style="color: #555555">=</span> <span style="color: #006699; font-weight: bold">new</span> HttpApiBinding(<span style="color: #CC3300">'EvalEngine'</span>, api, evalEngine);
   expect(mockedPythonFunction).toHaveBeenCalled();
   api.setEvalEngine(evalEngine, evalEngineBinding);
   api.addInputHandler(cfnInputHandler, cfnInputHandlerApiBinding);
-  <span style="color: #006699; font-weight: bold">new</span> ControlBroker(stack, <span style="color: #CC3300">&#39;TestControlBroker&#39;</span>, {
+  <span style="color: #006699; font-weight: bold">new</span> ControlBroker(stack, <span style="color: #CC3300">'TestControlBroker'</span>, {
     api,
   });
 });
 </code></pre></div>
-
-
 <p>The particular portions of interest are those <code>jest</code> mock-related calls and <code>mockedPythonFunction.mockImplementation()</code>. That <code>mockImplementation()</code> call mocks out the property <code>functionArn</code> and the method <code>addPermission()</code>, which I found the surrounding code needed in order to still function. For instance, without a <code>functionArn</code> value, which of course the real non-mocked code provides, I would get the following error:</p>
 <div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>FAIL  test/control-broker.test.ts
  ● ControlBroker can be created and attached to a stack
 
    Either `integrationSubtype` or `integrationUri` must be specified.
 </code></pre></div>
-
-
 <p>However, with the minimal necessary mock implementation, I get the following:</p>
 <div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>Test Suites: 2 passed, 2 total
 Tests:       2 passed, 2 total
 Snapshots:   0 total
 Time:        4.26 s, estimated 5 s
 </code></pre></div>
-
-
 <p>Yay! Previously test runs took significantly longer - at least 19 seconds if the container already existed and was cached, and far longer (minutes) if not.</p>
 <p>The most important thing is that no Docker containers are created during unit test runs any longer, and I think this approach can be used by others in the future to both speed up and make their AWS CDK Construct Library unit test runs compatible with GitHub actions.</p>
-    </main>
-    <aside>
-        <h1>Tags</h1>
-        <ul>
-            <li><a href="./tag/amateur-radio.html">amateur radio</a></li>
-            <li><a href="./tag/aws.html">aws</a></li>
-            <li><a href="./tag/career.html">career</a></li>
-            <li><a href="./tag/cdk.html">cdk</a></li>
-            <li><a href="./tag/docker.html">docker</a></li>
-            <li><a href="./tag/evergreen.html">evergreen</a></li>
-            <li><a href="./tag/gardening.html">gardening</a></li>
-            <li><a href="./tag/ham-radio.html">ham radio</a></li>
-            <li><a href="./tag/jsii.html">jsii</a></li>
-            <li><a href="./tag/kids.html">kids</a></li>
-            <li><a href="./tag/learning.html">learning</a></li>
-            <li><a href="./tag/linux.html">linux</a></li>
-            <li><a href="./tag/open-source.html">open source</a></li>
-            <li><a href="./tag/parenting.html">parenting</a></li>
-            <li><a href="./tag/project-management.html">project management</a></li>
-            <li><a href="./tag/projects.html">projects</a></li>
-            <li><a href="./tag/projen.html">projen</a></li>
-            <li><a href="./tag/python.html">python</a></li>
-            <li><a href="./tag/raspi.html">raspi</a></li>
-            <li><a href="./tag/resume.html">resume</a></li>
-            <li><a href="./tag/shell.html">shell</a></li>
-            <li><a href="./tag/software-development.html">software development</a></li>
-            <li><a href="./tag/ubitx.html">ubitx</a></li>
-            <li><a href="./tag/xonsh.html">xonsh</a></li>
-            <li><a href="./tag/xontribs.html">xontribs</a></li>
-        </ul>
-    </aside>
-<script data-goatcounter="https://dinogalactic.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>  </body>
+</main>
+<aside>
+<h1>Tags</h1>
+<ul>
+<li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+<li><a href="./tag/aws.html">aws</a></li>
+<li><a href="./tag/career.html">career</a></li>
+<li><a href="./tag/cdk.html">cdk</a></li>
+<li><a href="./tag/docker.html">docker</a></li>
+<li><a href="./tag/evergreen.html">evergreen</a></li>
+<li><a href="./tag/gardening.html">gardening</a></li>
+<li><a href="./tag/ham-radio.html">ham radio</a></li>
+<li><a href="./tag/jsii.html">jsii</a></li>
+<li><a href="./tag/kids.html">kids</a></li>
+<li><a href="./tag/learning.html">learning</a></li>
+<li><a href="./tag/linux.html">linux</a></li>
+<li><a href="./tag/open-source.html">open source</a></li>
+<li><a href="./tag/parenting.html">parenting</a></li>
+<li><a href="./tag/project-management.html">project management</a></li>
+<li><a href="./tag/projects.html">projects</a></li>
+<li><a href="./tag/projen.html">projen</a></li>
+<li><a href="./tag/python.html">python</a></li>
+<li><a href="./tag/raspi.html">raspi</a></li>
+<li><a href="./tag/resume.html">resume</a></li>
+<li><a href="./tag/shell.html">shell</a></li>
+<li><a href="./tag/software-development.html">software development</a></li>
+<li><a href="./tag/ubitx.html">ubitx</a></li>
+<li><a href="./tag/xonsh.html">xonsh</a></li>
+<li><a href="./tag/xontribs.html">xontribs</a></li>
+</ul>
+</aside>
+<script async="" data-goatcounter="https://dinogalactic.goatcounter.com/count" src="//gc.zgo.at/count.js"></script> </body>
 </html>
