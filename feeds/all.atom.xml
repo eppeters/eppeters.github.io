@@ -419,7 +419,7 @@ In [&lt;span style="color: #FF6600"&gt;29&lt;/span&gt;]: &lt;span style="color: 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;Here are the boto3 &lt;a href="https://boto3.amazonaws.com/v1/documentation/api/latest/guide/paginators.html"&gt;pagination docs&lt;/a&gt;.&lt;/p&gt;</content><category term="misc"></category><category term="python"></category><category term="aws"></category></entry><entry><title>[Pic] Early potatoes 2020</title><link href="https://www.dinogalactic.com/pic-early-potatoes-2020.html" rel="alternate"></link><published>2020-07-18T06:00:00-04:00</published><updated>2020-07-18T06:00:00-04:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-07-18:/pic-early-potatoes-2020.html</id><content type="html">&lt;p&gt;&lt;img alt="Early potatoes in my hand" src="https://www.dinogalactic.com/images/early_potatoes.jpg" /&gt;&lt;/p&gt;</content><category term="misc"></category><category term="gardening"></category></entry><entry><title>Powering a Ham Radio with a Laptop Battery</title><link href="https://www.dinogalactic.com/powering-a-ham-radio-with-a-laptop-battery.html" rel="alternate"></link><published>2020-05-05T22:14:00-04:00</published><updated>2020-05-05T22:14:00-04:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-05-05:/powering-a-ham-radio-with-a-laptop-battery.html</id><summary type="html">&lt;p&gt;I recently had &lt;a href="https://www.dinogalactic.com/debugging-an-inteference-problem-on-my-ubitx-v6.html"&gt;some bad luck with a cheap 12V power supply&lt;/a&gt; with my &lt;a href="https://www.hfsignals.com/index.php/ubitx-v6/"&gt;uBitx v6&lt;/a&gt;. In short, the supply was extremely noisy across all the RF bands I wanted to use. I had said in that other post that I would buy a better power supply suitable for RF …&lt;/p&gt;</summary><content type="html">&lt;p&gt;I recently had &lt;a href="https://www.dinogalactic.com/debugging-an-inteference-problem-on-my-ubitx-v6.html"&gt;some bad luck with a cheap 12V power supply&lt;/a&gt; with my &lt;a href="https://www.hfsignals.com/index.php/ubitx-v6/"&gt;uBitx v6&lt;/a&gt;. In short, the supply was extremely noisy across all the RF bands I wanted to use. I had said in that other post that I would buy a better power supply suitable for RF, but I don't believe you should do that when you can hack something together using parts you already have, especially when just starting out.&lt;/p&gt;
+&lt;p&gt;Here are the boto3 &lt;a href="https://boto3.amazonaws.com/v1/documentation/api/latest/guide/paginators.html"&gt;pagination docs&lt;/a&gt;.&lt;/p&gt;</content><category term="misc"></category><category term="python"></category><category term="aws"></category></entry><entry><title>Powering a Ham Radio with a Laptop Battery</title><link href="https://www.dinogalactic.com/powering-a-ham-radio-with-a-laptop-battery.html" rel="alternate"></link><published>2020-05-05T22:14:00-04:00</published><updated>2020-05-05T22:14:00-04:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-05-05:/powering-a-ham-radio-with-a-laptop-battery.html</id><summary type="html">&lt;p&gt;I recently had &lt;a href="https://www.dinogalactic.com/debugging-an-inteference-problem-on-my-ubitx-v6.html"&gt;some bad luck with a cheap 12V power supply&lt;/a&gt; with my &lt;a href="https://www.hfsignals.com/index.php/ubitx-v6/"&gt;uBitx v6&lt;/a&gt;. In short, the supply was extremely noisy across all the RF bands I wanted to use. I had said in that other post that I would buy a better power supply suitable for RF …&lt;/p&gt;</summary><content type="html">&lt;p&gt;I recently had &lt;a href="https://www.dinogalactic.com/debugging-an-inteference-problem-on-my-ubitx-v6.html"&gt;some bad luck with a cheap 12V power supply&lt;/a&gt; with my &lt;a href="https://www.hfsignals.com/index.php/ubitx-v6/"&gt;uBitx v6&lt;/a&gt;. In short, the supply was extremely noisy across all the RF bands I wanted to use. I had said in that other post that I would buy a better power supply suitable for RF, but I don't believe you should do that when you can hack something together using parts you already have, especially when just starting out.&lt;/p&gt;
 &lt;p&gt;I poached the working Lithium Ion battery from the very Dell Lattitude E5540 laptop that I'm writing this on, and everything is working perfectly.&lt;/p&gt;
 &lt;p&gt;Here is how I did that.&lt;/p&gt;
 &lt;h2&gt;Find a decent approximation of the Laptop's pinout&lt;/h2&gt;
@@ -445,7 +445,7 @@ In [&lt;span style="color: #FF6600"&gt;29&lt;/span&gt;]: &lt;span style="color: 
 &lt;/figure&gt;
 
 &lt;h2&gt;Profit&lt;/h2&gt;
-&lt;p&gt;I will keep going with this setup as long as I can. It's working, is noiseless, is free for me, and since I don't take my laptop anywhere really, is not inconvenient yet.&lt;/p&gt;</content><category term="misc"></category><category term="ubitx"></category><category term="amateur radio"></category><category term="ham radio"></category></entry><entry><title>Updated garden layout for 2020</title><link href="https://www.dinogalactic.com/updated-garden-layout-for-2020.html" rel="alternate"></link><published>2020-04-01T06:00:00-04:00</published><updated>2020-04-01T06:00:00-04:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-04-01:/updated-garden-layout-for-2020.html</id><content type="html">&lt;p&gt;&lt;img alt="Updated 2020 garden layout" src="https://www.dinogalactic.com/images/garden_layout_updated.png" /&gt;&lt;/p&gt;</content><category term="misc"></category><category term="gardening"></category></entry><entry><title>Debugging an Inteference Problem on My uBitx v6</title><link href="https://www.dinogalactic.com/debugging-an-inteference-problem-on-my-ubitx-v6.html" rel="alternate"></link><published>2020-03-22T06:00:00-04:00</published><updated>2020-03-22T06:00:00-04:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-03-22:/debugging-an-inteference-problem-on-my-ubitx-v6.html</id><summary type="html">&lt;p&gt;I got my uBitx v6 recently from
+&lt;p&gt;I will keep going with this setup as long as I can. It's working, is noiseless, is free for me, and since I don't take my laptop anywhere really, is not inconvenient yet.&lt;/p&gt;</content><category term="misc"></category><category term="ubitx"></category><category term="amateur radio"></category><category term="ham radio"></category></entry><entry><title>Debugging an Inteference Problem on My uBitx v6</title><link href="https://www.dinogalactic.com/debugging-an-inteference-problem-on-my-ubitx-v6.html" rel="alternate"></link><published>2020-03-22T06:00:00-04:00</published><updated>2020-03-22T06:00:00-04:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-03-22:/debugging-an-inteference-problem-on-my-ubitx-v6.html</id><summary type="html">&lt;p&gt;I got my uBitx v6 recently from
 &lt;a href="https://www.hfsignals.com/index.php/ubitx-v6/"&gt;hfsignals&lt;/a&gt; and hooked it up to
 a 20m/40m trapped dipole from &lt;a href="http://qrpkits.com/dualbanddipole.html"&gt;Pacific
 Antenna&lt;/a&gt;, mounted about 30 ft off the
@@ -508,121 +508,12 @@ notice that the cheap LED grow lights I use for my tomatoes and peppers create
 strong interference, but they're close to the radio and easy to turn off
 temporarily.&lt;/p&gt;
 &lt;p&gt;After eliminating the RFI, I immediately heard the Russian station &lt;a href="https://www.qrz.com/db/R2OA"&gt;R2OA&lt;/a&gt; coming through on 14.203 MHz SSB during the &lt;a href="http://www.rdxc.org/asp/pages/rulesg.asp"&gt;Russian DX contest&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;Of course, some AAs from the store are going to last less than an hour. My long-term solution to the switching power supply issue is to buy one made for radio use, like &lt;a href="https://www.mfjenterprises.com/Product.php?productid=MFJ-4225MV"&gt;this one by MFJ&lt;/a&gt;.&lt;/p&gt;</content><category term="misc"></category><category term="ubitx"></category><category term="amateur radio"></category><category term="ham radio"></category></entry><entry><title>Side project idea: WSPRry Pi Transmission Analysis with Espotek Labrador</title><link href="https://www.dinogalactic.com/side-project-idea-wsprry-pi-transmission-analysis-with-espotek-labrador.html" rel="alternate"></link><published>2020-03-08T16:50:00-04:00</published><updated>2020-03-08T16:50:00-04:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-03-08:/side-project-idea-wsprry-pi-transmission-analysis-with-espotek-labrador.html</id><summary type="html">&lt;p&gt;Lately I've gotten into ham radio and passed my FCC licensing exams, so I can transmit now, but I don't have a radio. I do have an (unmounted - it's in a drawer) antenna, so I could transmit if I had a device to do so.&lt;/p&gt;
-&lt;p&gt;I am considering building a …&lt;/p&gt;</summary><content type="html">&lt;p&gt;Lately I've gotten into ham radio and passed my FCC licensing exams, so I can transmit now, but I don't have a radio. I do have an (unmounted - it's in a drawer) antenna, so I could transmit if I had a device to do so.&lt;/p&gt;
-&lt;p&gt;I am considering building a &lt;a href="https://en.wikipedia.org/wiki/WSPR_(amateur_radio_software)"&gt;WSPR&lt;/a&gt; beacon since I have most of the materials. This would include installing &lt;a href="https://github.com/JamesP6000/WsprryPi"&gt;WSPRry Pi&lt;/a&gt; on one of my Rasperry Pis and &lt;a href="http://www.gqrp.com/harmonic_filters.pdf"&gt;building a low-pass filter&lt;/a&gt; to keep from transmitting on illegal frequencies.&lt;/p&gt;
-&lt;p&gt;But before I have the components for a low-pass filter, I can get used to my new &lt;a href="https://github.com/EspoTek/Labrador"&gt;Espotek Labrador&lt;/a&gt; by analysing the outputs from the WSPRry Pi on the Pi's GPIO pins without transmitting. How neat!&lt;/p&gt;
-&lt;p&gt;Of particular interest to me are these questions:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Why does the WsprryPi generate illegal harmonics?&lt;/li&gt;
-&lt;li&gt;Can you observe the harmonics and the fundamental frequency at the same time using an EspoTek Labrador? Can you do that with just any oscilloscope?&lt;/li&gt;
-&lt;li&gt;My hypothesis is that you can't do this with the Labrador or a standard oscilloscope because the signals will be added together and displayed as a square wave, since a square wave is the result of adding odd harmonics with the fundamental frequency, and an oscilloscope displays signals in the time domain, not the frequency domain.&lt;/li&gt;
-&lt;li&gt;If my hypothesis is correct, how would adding a low pass filter, which attenuates signals above a particular frequency, allow a square wave to be transmitted? Wouldn't it attenuate the higher frequency harmonics needed to produce the square wave in the first place? In other words, if a square wave is the combination of odd harmonics, and we eliminate higher frequency harmonics, won't we be removing the components that make this signal a square wave?&lt;/li&gt;
-&lt;/ul&gt;</content><category term="misc"></category><category term="projects"></category><category term="raspi"></category><category term="amateur radio"></category></entry><entry><title>Broccoli, Cabbage, Onions, Basil, and Chamomile</title><link href="https://www.dinogalactic.com/broccoli-cabbage-onions-basil-and-chamomile.html" rel="alternate"></link><published>2020-03-02T06:00:00-05:00</published><updated>2020-03-02T06:00:00-05:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-03-02:/broccoli-cabbage-onions-basil-and-chamomile.html</id><summary type="html">&lt;h2&gt;Garden Plan&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;How much of each we want to plant in the garden&lt;/strong&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;8 Broccoli&lt;/li&gt;
-&lt;li&gt;11 Chinese Cabbage&lt;/li&gt;
-&lt;li&gt;40 Yellow Onions&lt;/li&gt;
-&lt;li&gt;12 Red Onions&lt;/li&gt;
-&lt;li&gt;96 Green Onions (table onions)&lt;/li&gt;
-&lt;li&gt;24 chamomile&lt;/li&gt;
-&lt;li&gt;28 Basil&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;Starting Counts&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;How many we're actually starting&lt;/strong&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;80 yellow onions and 80 white onions, for a total …&lt;/li&gt;&lt;/ul&gt;</summary><content type="html">&lt;h2&gt;Garden Plan&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;How much of each we want to plant in the garden&lt;/strong&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;8 Broccoli&lt;/li&gt;
-&lt;li&gt;11 Chinese Cabbage&lt;/li&gt;
-&lt;li&gt;40 Yellow Onions&lt;/li&gt;
-&lt;li&gt;12 Red Onions&lt;/li&gt;
-&lt;li&gt;96 Green Onions (table onions)&lt;/li&gt;
-&lt;li&gt;24 chamomile&lt;/li&gt;
-&lt;li&gt;28 Basil&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;Starting Counts&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;How many we're actually starting&lt;/strong&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;80 yellow onions and 80 white onions, for a total of 160 onions&lt;/li&gt;
-&lt;li&gt;About 40 yellow onions expected to bulb out&lt;/li&gt;
-&lt;li&gt;About 40 white onions expected to bulb out&lt;/li&gt;
-&lt;li&gt;About 80 onions expected as green onions&lt;/li&gt;
-&lt;li&gt;Purchased from Tractor Supply as bulbs, not seeds&lt;/li&gt;
-&lt;li&gt;28 Chinese Cabbage&lt;/li&gt;
-&lt;li&gt;21 Broccoli&lt;/li&gt;
-&lt;li&gt;21 Chamomile&lt;/li&gt;
-&lt;li&gt;35 Basil&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;Starting conditions&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;In front of a window&lt;/li&gt;
-&lt;li&gt;Big rack, not all gets light at once&lt;/li&gt;
-&lt;li&gt;Chamomile &amp;amp; Basil on a heat mat, but not cabbage and broccoli&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;Next Steps&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;Make a cold frame tunnel, probably using &lt;a href="https://www.growveg.com/guides/how-to-set-up-a-low-tunnel-for-cool-season-crops/"&gt;these instructions&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;Set Chinese Cabbage out after last frost&lt;/li&gt;
-&lt;li&gt;Fall broccoli and cabbage seedlings should be started about 2 months before
-  first frost&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;Mistakes/Lessons Learned&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;I didn't know enough about onions. I bought both short and long day onions,
-  but found that my zone requires something called intermediate onions, and if
-  it's possible to plant the other types here, I don't know how. So I'd like to
-  learn about that before next year.&lt;/li&gt;
-&lt;li&gt;Chinese Cabbage and broccoli say: "Start seeds for transplants 4-6 weeks
-  prior to desired transplanting date... Set the plants in the garden about 4
-  weeks before last frost date in the spring..."&lt;/li&gt;
-&lt;li&gt;Next year, start seedlings around Feb 1-Feb 15&lt;/li&gt;
-&lt;/ul&gt;</content><category term="misc"></category><category term="gardening"></category></entry><entry><title>Seed Starting 2020</title><link href="https://www.dinogalactic.com/seed-starting-2020.html" rel="alternate"></link><published>2020-02-16T06:00:00-05:00</published><updated>2020-02-16T06:00:00-05:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2020-02-16:/seed-starting-2020.html</id><summary type="html">&lt;p&gt;&lt;img alt="2020 garden layout" src="https://www.dinogalactic.com/images/garden_layout.png" /&gt;&lt;/p&gt;
-&lt;h2&gt;Seed source&lt;/h2&gt;
-&lt;p&gt;All seeds from Baker Creek Heirloom Seeds.&lt;/p&gt;
-&lt;h2&gt;Mix/conditions&lt;/h2&gt;
-&lt;p&gt;Started with 2/5 peat, 2/5 home made compost, 1/5 perlite mix in 3" peat pots in front of a south facing window.&lt;/p&gt;
-&lt;h2&gt;2-16-20&lt;/h2&gt;
-&lt;p&gt;&lt;img alt="2-16-20 Guinevere planting seeds" src="https://www.dinogalactic.com/images/guinevere-planting-seeds.jpg" /&gt;&lt;/p&gt;
-&lt;h3&gt;Tomatoes&lt;/h3&gt;
-&lt;p&gt;&lt;strong&gt;Target&lt;/strong&gt;: 36 tomato plants (34 large, 2 small)&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Number of pots started …&lt;/strong&gt;&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;img alt="2020 garden layout" src="https://www.dinogalactic.com/images/garden_layout.png" /&gt;&lt;/p&gt;
-&lt;h2&gt;Seed source&lt;/h2&gt;
-&lt;p&gt;All seeds from Baker Creek Heirloom Seeds.&lt;/p&gt;
-&lt;h2&gt;Mix/conditions&lt;/h2&gt;
-&lt;p&gt;Started with 2/5 peat, 2/5 home made compost, 1/5 perlite mix in 3" peat pots in front of a south facing window.&lt;/p&gt;
-&lt;h2&gt;2-16-20&lt;/h2&gt;
-&lt;p&gt;&lt;img alt="2-16-20 Guinevere planting seeds" src="https://www.dinogalactic.com/images/guinevere-planting-seeds.jpg" /&gt;&lt;/p&gt;
-&lt;h3&gt;Tomatoes&lt;/h3&gt;
-&lt;p&gt;&lt;strong&gt;Target&lt;/strong&gt;: 36 tomato plants (34 large, 2 small)&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Number of pots started with seeds&lt;/strong&gt;:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;12 Paul Robeson&lt;/li&gt;
-&lt;li&gt;8 Dad's Sunset&lt;/li&gt;
-&lt;li&gt;10 Mortgage Lifter&lt;/li&gt;
-&lt;li&gt;12 Beefsteak&lt;/li&gt;
-&lt;li&gt;4 Principe Borgese&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Put on a heat mat.&lt;/p&gt;
-&lt;h3&gt;Peppers&lt;/h3&gt;
-&lt;p&gt;&lt;strong&gt;Target&lt;/strong&gt;: 4 hot pepper plants, 7 green/red pepper plants.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Number of pots started with seeds&lt;/strong&gt;:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;8 Fish Peppers (medium/hot)&lt;/li&gt;
-&lt;li&gt;8 Korean Dark Green Peppers (hot)&lt;/li&gt;
-&lt;li&gt;8 Jigsaw Peppers (medium/hot)&lt;/li&gt;
-&lt;li&gt;12 King of the North (red/green mild peppers)&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Put on a heat mat.&lt;/p&gt;
-&lt;h3&gt;Overview Photo&lt;/h3&gt;
-&lt;p&gt;This is everything we planted today in one nice aerial overview photo.&lt;/p&gt;
-&lt;p&gt;&lt;img alt="2-16-20 areial seedling overview photo" src="https://www.dinogalactic.com/images/2-16-20-aerial-seedling-overview.jpg" /&gt;&lt;/p&gt;</content><category term="misc"></category><category term="gardening"></category></entry><entry><title>What Have I Actually Done at My Current Job?</title><link href="https://www.dinogalactic.com/what-have-i-actually-done-at-my-current-job.html" rel="alternate"></link><published>2019-11-26T06:00:00-05:00</published><updated>2019-11-26T06:00:00-05:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2019-11-26:/what-have-i-actually-done-at-my-current-job.html</id><summary type="html">&lt;p&gt;If I sat down to work on my resume any day but today, I would probably forget
-that I was the one who managed much of our development team's Omniture
-integrations at Truth Initiative Innovations.&lt;/p&gt;
-&lt;p&gt;Why not create a long-lived, long-updated post that lists out these lesser
-remembered things, and …&lt;/p&gt;</summary><content type="html">&lt;p&gt;If I sat down to work on my resume any day but today, I would probably forget
+&lt;p&gt;Of course, some AAs from the store are going to last less than an hour. My long-term solution to the switching power supply issue is to buy one made for radio use, like &lt;a href="https://www.mfjenterprises.com/Product.php?productid=MFJ-4225MV"&gt;this one by MFJ&lt;/a&gt;.&lt;/p&gt;</content><category term="misc"></category><category term="ubitx"></category><category term="amateur radio"></category><category term="ham radio"></category></entry><entry><title>What Have I Actually Done at My Current Job?</title><link href="https://www.dinogalactic.com/what-have-i-actually-done-at-my-current-job.html" rel="alternate"></link><published>2019-11-26T06:00:00-05:00</published><updated>2019-11-26T06:00:00-05:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2019-11-26:/what-have-i-actually-done-at-my-current-job.html</id><summary type="html">&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: This quite out of date since it was last updated in 2019. I have worn
+many different hats since then. Still, I like keeping this stuff up here.&lt;/p&gt;
+&lt;p&gt;If I sat down to work on my resume any day but today, I would probably forget
+that I was the …&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: This quite out of date since it was last updated in 2019. I have worn
+many different hats since then. Still, I like keeping this stuff up here.&lt;/p&gt;
+&lt;p&gt;If I sat down to work on my resume any day but today, I would probably forget
 that I was the one who managed much of our development team's Omniture
 integrations at Truth Initiative Innovations.&lt;/p&gt;
 &lt;p&gt;Why not create a long-lived, long-updated post that lists out these lesser
