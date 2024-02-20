@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>dinogalactic - other</title><link href="https://www.dinogalactic.com/" rel="alternate"></link><link href="https://www.dinogalactic.com/feeds/other.atom.xml" rel="self"></link><id>https://www.dinogalactic.com/</id><updated>2024-02-04T06:00:00-05:00</updated><entry><title>How stateful and stateless AWS firewalls behave differently when blocking TCP ports</title><link href="https://www.dinogalactic.com/how-stateful-and-stateless-aws-firewalls-behave-differently-when-blocking-tcp-ports.html" rel="alternate"></link><published>2024-02-04T06:00:00-05:00</published><updated>2024-02-04T06:00:00-05:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2024-02-04:/how-stateful-and-stateless-aws-firewalls-behave-differently-when-blocking-tcp-ports.html</id><summary type="html">&lt;p&gt;Several years ago at an AWS training course, the trainer said that EC2 security groups are "stateful," whereas EC2 NACLs (Network Access Control Lists) are not. The consequence was that you could easily set up "outgoing only" connections on a security group by adding an outbound rule, but on a …&lt;/p&gt;</summary><content type="html">&lt;p&gt;Several years ago at an AWS training course, the trainer said that EC2 security groups are "stateful," whereas EC2 NACLs (Network Access Control Lists) are not. The consequence was that you could easily set up "outgoing only" connections on a security group by adding an outbound rule, but on a NACL, you'd have to configure both an outbound and an inbound rule to allow even outbound connections. The NACL had to be configured this way or it wouldn't let the responses come back from whatever network location your system was trying to connect to. But I've never &lt;em&gt;really&lt;/em&gt; known what he meant.&lt;/p&gt;
+&lt;p&gt;In reading the (&lt;code&gt;nmap&lt;/code&gt; Book section on Avoiding Intrusion Detection and Prevention Systems when port scanning)[https://nmap.org/book/determining-firewall-rules.html#fw-rules-SYN], I found an explanation of &lt;code&gt;nmap&lt;/code&gt;'s &lt;code&gt;ACK&lt;/code&gt; scanning feature that helped me understand what "stateless" really means in the above context. &lt;/p&gt;
+&lt;p&gt;Here's the excerpt from the &lt;code&gt;nmap&lt;/code&gt; book:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Many networks allow nearly unrestricted outbound connections, but wish to block Internet hosts from initiating connections back to them. Blocking incoming &lt;code&gt;SYN&lt;/code&gt; packets (without the &lt;code&gt;ACK&lt;/code&gt; bit set) is an easy way to do this, but it still allows any &lt;code&gt;ACK&lt;/code&gt; packets through. Blocking those &lt;code&gt;ACK&lt;/code&gt; packets is more difficult, because they do not tell which side started the connection. To block unsolicited &lt;code&gt;ACK&lt;/code&gt; packets (as sent by the Nmap &lt;code&gt;ACK&lt;/code&gt; scan), while allowing &lt;code&gt;ACK&lt;/code&gt; packets belonging to legitimate connections, firewalls must statefully watch every established connection to determine whether a given &lt;code&gt;ACK&lt;/code&gt; is appropriate.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Let's do two sets of tests: one focused on NACLs and one focused on Security Groups.&lt;/p&gt;
+&lt;p&gt;In these first tests (focused on the NACL), the EC2 instance has a Security Group, but all traffic is allowed (both inbound and outbound) on that Security Group. I did this because every EC2 instance must have a security group in AWS, and I wanted to focus on only the NACL for now, so the Security Group is just passing traffic through.&lt;/p&gt;
+&lt;h2&gt;NACL (Stateless)&lt;/h2&gt;
+&lt;p&gt;First we'll put the EC2 instance behind a NACL that has all outbound ports allowed but all inbound ports disallowed. We should expect all ports to show as filtered in an &lt;code&gt;nmap&lt;/code&gt; &lt;code&gt;ACK&lt;/code&gt; scan. More important to understand right now is that any outgoing TCP connections, which require packets to be sent back to establish the connection and transfer data, will not work.&lt;/p&gt;
+&lt;p&gt;(Diagrams generated with ChatGPT)&lt;/p&gt;
+&lt;p&gt;```lua
+ +-----------------------+
+ |  Network ACL          |
+ |                       |
+ |                       |
+ |  Outbound ports:      |
+ |  0-65535              |
+ +-----------------------+
+         ^
+         |
+         v
+ +-----------------------+
+ |  Subnet               |
+ |                       |
+ | +-------------------+ |
+ | | AWS EC2 Instance  | |
+ | |                   | |
+ | |   netcat listening| |
+ | |   on port 80      | |
+ | +-------------------+ |
+ |                       |
+ +-----------------------+&lt;/p&gt;
+&lt;p&gt;```&lt;/p&gt;
+&lt;p&gt;As promised, no TCP connections to network locations outside the instance's local subnet are possible in this configuration:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;bash
+[ec2-user@ip-10-0-12-197 ~]$ nc -w 1 -v google.com 80
+Ncat: Version 7.93 ( https://nmap.org/ncat )
+Ncat: Connection to 142.250.31.102 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 142.250.31.113 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 142.250.31.138 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 142.250.31.139 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 142.250.31.100 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 142.250.31.101 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 2607:f8b0:4004:c08::66 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Connection to 2607:f8b0:4004:c08::71 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Connection to 2607:f8b0:4004:c08::64 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Network is unreachable.&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;In this configuration, &lt;code&gt;nmap&lt;/code&gt; finds that all ports (port 53 notwithstanding) are filtered:&lt;/p&gt;
+&lt;p&gt;```
+eddie@pop-os:~$ sudo nmap -T4 -Pn -sA 54.221.77.100 
+Starting Nmap 7.80 ( https://nmap.org ) at 2024-01-26 14:59 EST
+Nmap scan report for ec2-54-221-77-100.compute-1.amazonaws.com (54.221.77.100)
+Host is up (0.0020s latency).
+Not shown: 999 filtered ports
+PORT   STATE      SERVICE
+53/tcp unfiltered domain&lt;/p&gt;
+&lt;p&gt;Nmap done: 1 IP address (1 host up) scanned in 4.31 seconds
+```&lt;/p&gt;
+&lt;p&gt;Side note: I'm actually not sure why port 53 is unfiltered here, so I'll try to figure that out separately. Regardless, all other scanned ports are filtered. We could try all 65536 ports, but there's no need at least for our demonstration.&lt;/p&gt;
+&lt;p&gt;Next, we'll add an inbound port range rule to the NACL. This will allow inbound &lt;a href="https://www.ncftp.com/ncftpd/doc/misc/ephemeral_ports.html"&gt;ephemeral ports&lt;/a&gt; 1024-65535, which are also called "local" ports in Linux. These are the ports that could be used for connection back to the EC2 instance from whatever outgoing connections it originates.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;lua
+ +-----------------------+
+ |  Network ACL          |
+ |                       |
+ |  Inbound ports:       |
+ |  1024-65535          |
+ |                       |
+ |  Outbound ports:      |
+ |  0-65535              |
+ +-----------------------+
+         ^
+         |
+         v
+ +-----------------------+
+ |  Subnet               |
+ |                       |
+ | +-------------------+ |
+ | | AWS EC2 Instance  | |
+ | +-------------------+ |
+ |                       |
+ +-----------------------+&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Outbound connections are now possible:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;[ec2-user@ip-10-0-12-197 ~]$ nc -w 1 -v google.com 80
+Ncat: Version 7.93 ( https://nmap.org/ncat )
+Ncat: Connected to 142.250.31.101:80.&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;When we perform an &lt;code&gt;nmap&lt;/code&gt; &lt;code&gt;ACK&lt;/code&gt; scan, the scan should show that a &lt;code&gt;RST&lt;/code&gt; response was returned from the EC2 instance.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;eddie@pop-os:~$ sudo nmap -ddd -T4 -Pn -sA 54.221.77.100
+...OUTPUT TRUNCATED BY ME...
+1001/tcp  filtered   webpush              no-response
+1002/tcp  filtered   windows-icfw         no-response
+1007/tcp  filtered   unknown              no-response
+1009/tcp  filtered   unknown              no-response
+1010/tcp  filtered   surf                 no-response
+1011/tcp  filtered   unknown              no-response
+1021/tcp  filtered   exp1                 no-response
+1022/tcp  filtered   exp2                 no-response
+1023/tcp  filtered   netvenuechat         no-response
+1024/tcp  unfiltered kdm                  reset ttl 115
+1025/tcp  unfiltered NFS-or-IIS           reset ttl 115
+1026/tcp  unfiltered LSA-or-nterm         reset ttl 113
+1027/tcp  unfiltered IIS                  reset ttl 114
+1028/tcp  unfiltered unknown              reset ttl 113
+1029/tcp  unfiltered ms-lsa               reset ttl 115
+1030/tcp  unfiltered iad1                 reset ttl 114
+1031/tcp  unfiltered iad2                 reset ttl 113
+1032/tcp  unfiltered iad3                 reset ttl 115
+...OUTPUT TRUNCATED BY ME...&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;What happened here?&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;nmap&lt;/code&gt; scan I performed sent &lt;code&gt;ACK&lt;/code&gt; packets to the top 1000 most interesting ports (as defined by &lt;code&gt;nmap&lt;/code&gt;), just like in the previous scan, but during this scan, some ports showed as "unfiltered" rather than "filtered."&lt;/p&gt;
+&lt;p&gt;Notice that the return status switched from &lt;code&gt;filtered&lt;/code&gt; to &lt;code&gt;unfiltered&lt;/code&gt; immediately when we started scanning port 1024. This is not an accident - our firewall (NACL) has ports &lt;code&gt;1024-65535&lt;/code&gt; allowed for inbound connections. This doesn't tell us that those ports are &lt;em&gt;open&lt;/em&gt; in &lt;code&gt;nmap&lt;/code&gt; terms - there may be (in this case there is not) something listening on those ports on the target host, but all we can tell from this that the Firewall allowed the &lt;code&gt;ACK&lt;/code&gt; packet to reach the EC2 instance, and the instance returned a &lt;code&gt;RST&lt;/code&gt; packet.&lt;/p&gt;
+&lt;p&gt;For more information about &lt;code&gt;nmap&lt;/code&gt;'s definitions of open, closed, filtered, unfiltered, etc., see the &lt;a href="https://nmap.org/book/man-port-scanning-basics.html"&gt;nmap docs&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Security Group (Stateful)&lt;/h2&gt;
+&lt;p&gt;Now, if we allow all inbound and outbound ports on the NACL so that all our traffic is handled by the Security Group attached to the EC2 instance, we can shift our test to the Security Group. We'll allow all outbound ports on the Security Group, but we won't allow any inbound ports.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;lua
+ +-----------------------+
+ |  Network ACL          |
+ |                       |
+ |                       |
+ |  All inbound and      |
+ |  outbound traffic     |
+ |  allowed              |
+ +-----------------------+
+         ^
+         |
+         v
+ +-----------------------+
+ |  Subnet               |
+ |                       |
+ | +-------------------+ |
+ | | Security Group    | |
+ | |                   | |
+ | | Inbound ports:    | |
+ | | None allowed      | |
+ | | Outbound ports:   | |
+ | | 0-65535           | |
+ | +-------------------+ |
+ | | AWS EC2 Instance  | |
+ | |                   | |
+ | +-------------------+ |
+ |                       |
+ +-----------------------+&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;When we &lt;code&gt;ACK&lt;/code&gt; scan the host this time, we see that all the ports are filtered:&lt;/p&gt;
+&lt;p&gt;```
+eddie@pop-os:~$ sudo nmap -T4 -Pn -sA 54.221.77.100 
+[sudo] password for eddie: 
+Starting Nmap 7.80 ( https://nmap.org ) at 2024-01-26 15:32 EST
+Nmap scan report for ec2-54-221-77-100.compute-1.amazonaws.com (54.221.77.100)
+Host is up (0.00064s latency).
+Not shown: 999 filtered ports
+PORT   STATE      SERVICE
+53/tcp unfiltered domain&lt;/p&gt;
+&lt;p&gt;Nmap done: 1 IP address (1 host up) scanned in 6.30 seconds
+```&lt;/p&gt;
+&lt;p&gt;And yet, outbound connections from the host still work:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;[ec2-user@ip-10-0-12-197 ~]$ nc -w 1 -v google.com 80
+Ncat: Version 7.93 ( https://nmap.org/ncat )
+Ncat: Connected to 142.250.31.101:80.&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;html
+[ec2-user@ip-10-0-12-197 ~]$ curl google.com
+&amp;lt;HTML&amp;gt;&amp;lt;HEAD&amp;gt;&amp;lt;meta http-equiv="content-type" content="text/html;charset=utf-8"&amp;gt;
+&amp;lt;TITLE&amp;gt;301 Moved&amp;lt;/TITLE&amp;gt;&amp;lt;/HEAD&amp;gt;&amp;lt;BODY&amp;gt;
+&amp;lt;H1&amp;gt;301 Moved&amp;lt;/H1&amp;gt;
+The document has moved
+&amp;lt;A HREF="http://www.google.com/"&amp;gt;here&amp;lt;/A&amp;gt;.
+&amp;lt;/BODY&amp;gt;&amp;lt;/HTML&amp;gt;&lt;/code&gt;&lt;/p&gt;</content><category term="other"></category><category term="security"></category><category term="aws"></category></entry></feed>

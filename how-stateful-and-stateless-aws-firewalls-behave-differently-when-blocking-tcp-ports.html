@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>dinogalactic — How stateful and stateless AWS firewalls behave differently when blocking TCP ports</title>
+<!-- Primary Meta Tags -->
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="./theme/css/typesetter.css" rel="stylesheet"/>
+<link href="./theme/css/typesetter-extensions.css" rel="stylesheet"/>
+<link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="alternate" title="dinogalactic Full Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/feeds/other.atom.xml" rel="alternate" title="dinogalactic Categories Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/how-stateful-and-stateless-aws-firewalls-behave-differently-when-blocking-tcp-ports.html" rel="canonical"/><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "dinogalactic", "item": "https://www.dinogalactic.com"}, {"@type": "ListItem", "position": 2, "name": "How stateful and stateless aws firewalls behave differently when blocking tcp ports", "item": "https://www.dinogalactic.com/how-stateful-and-stateless-aws-firewalls-behave-differently-when-blocking-tcp-ports.html"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "author": {"@type": "Person", "name": "Eddie Peters"}, "publisher": {"@type": "Organization", "name": "dinogalactic"}, "headline": "How stateful and stateless AWS firewalls behave differently when blocking TCP ports", "about": "other", "datePublished": "2024-02-04 06:00"}</script><meta content="summary" name="twitter:card"/><meta content="https://www.dinogalactic.com/how-stateful-and-stateless-aws-firewalls-behave-differently-when-blocking-tcp-ports.html" property="og:url"/><meta content="article" property="og:type"/><meta content="How stateful and stateless AWS firewalls behave differently when blocking TCP ports" property="og:title"/><meta content="en_US" property="og:locale"/></head>
+<body>
+<header><a alt="dinogalactic" href="./">dinogalactic</a></header>
+<nav>
+<h1>Navigation</h1>
+<ul>
+<li><a href="./pages/about.html">about</a></li>
+<li><a href="./pages/booksread.html">books</a></li>
+<li><a href="./category/aws.html">AWS</a></li>
+<li><a href="./category/misc.html">misc</a></li>
+<li><a href="./category/other.html">other</a></li>
+<li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+</ul>
+</nav>
+<main>
+<h1>How stateful and stateless AWS firewalls behave differently when blocking TCP ports</h1>
+<p>Several years ago at an AWS training course, the trainer said that EC2 security groups are "stateful," whereas EC2 NACLs (Network Access Control Lists) are not. The consequence was that you could easily set up "outgoing only" connections on a security group by adding an outbound rule, but on a NACL, you'd have to configure both an outbound and an inbound rule to allow even outbound connections. The NACL had to be configured this way or it wouldn't let the responses come back from whatever network location your system was trying to connect to. But I've never <em>really</em> known what he meant.</p>
+<p>In reading the (<code>nmap</code> Book section on Avoiding Intrusion Detection and Prevention Systems when port scanning)[https://nmap.org/book/determining-firewall-rules.html#fw-rules-SYN], I found an explanation of <code>nmap</code>'s <code>ACK</code> scanning feature that helped me understand what "stateless" really means in the above context. </p>
+<p>Here's the excerpt from the <code>nmap</code> book:</p>
+<blockquote>
+<p>Many networks allow nearly unrestricted outbound connections, but wish to block Internet hosts from initiating connections back to them. Blocking incoming <code>SYN</code> packets (without the <code>ACK</code> bit set) is an easy way to do this, but it still allows any <code>ACK</code> packets through. Blocking those <code>ACK</code> packets is more difficult, because they do not tell which side started the connection. To block unsolicited <code>ACK</code> packets (as sent by the Nmap <code>ACK</code> scan), while allowing <code>ACK</code> packets belonging to legitimate connections, firewalls must statefully watch every established connection to determine whether a given <code>ACK</code> is appropriate.</p>
+</blockquote>
+<p>Let's do two sets of tests: one focused on NACLs and one focused on Security Groups.</p>
+<p>In these first tests (focused on the NACL), the EC2 instance has a Security Group, but all traffic is allowed (both inbound and outbound) on that Security Group. I did this because every EC2 instance must have a security group in AWS, and I wanted to focus on only the NACL for now, so the Security Group is just passing traffic through.</p>
+<h2>NACL (Stateless)</h2>
+<p>First we'll put the EC2 instance behind a NACL that has all outbound ports allowed but all inbound ports disallowed. We should expect all ports to show as filtered in an <code>nmap</code> <code>ACK</code> scan. More important to understand right now is that any outgoing TCP connections, which require packets to be sent back to establish the connection and transfer data, will not work.</p>
+<p>(Diagrams generated with ChatGPT)</p>
+<p>```lua
+ +-----------------------+
+ |  Network ACL          |
+ |                       |
+ |                       |
+ |  Outbound ports:      |
+ |  0-65535              |
+ +-----------------------+
+         ^
+         |
+         v
+ +-----------------------+
+ |  Subnet               |
+ |                       |
+ | +-------------------+ |
+ | | AWS EC2 Instance  | |
+ | |                   | |
+ | |   netcat listening| |
+ | |   on port 80      | |
+ | +-------------------+ |
+ |                       |
+ +-----------------------+</p>
+<p>```</p>
+<p>As promised, no TCP connections to network locations outside the instance's local subnet are possible in this configuration:</p>
+<p><code>bash
+[ec2-user@ip-10-0-12-197 ~]$ nc -w 1 -v google.com 80
+Ncat: Version 7.93 ( https://nmap.org/ncat )
+Ncat: Connection to 142.250.31.102 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 142.250.31.113 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 142.250.31.138 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 142.250.31.139 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 142.250.31.100 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 142.250.31.101 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to 2607:f8b0:4004:c08::66 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Connection to 2607:f8b0:4004:c08::71 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Connection to 2607:f8b0:4004:c08::64 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Network is unreachable.</code></p>
+<p>In this configuration, <code>nmap</code> finds that all ports (port 53 notwithstanding) are filtered:</p>
+<p>```
+eddie@pop-os:~$ sudo nmap -T4 -Pn -sA 54.221.77.100 
+Starting Nmap 7.80 ( https://nmap.org ) at 2024-01-26 14:59 EST
+Nmap scan report for ec2-54-221-77-100.compute-1.amazonaws.com (54.221.77.100)
+Host is up (0.0020s latency).
+Not shown: 999 filtered ports
+PORT   STATE      SERVICE
+53/tcp unfiltered domain</p>
+<p>Nmap done: 1 IP address (1 host up) scanned in 4.31 seconds
+```</p>
+<p>Side note: I'm actually not sure why port 53 is unfiltered here, so I'll try to figure that out separately. Regardless, all other scanned ports are filtered. We could try all 65536 ports, but there's no need at least for our demonstration.</p>
+<p>Next, we'll add an inbound port range rule to the NACL. This will allow inbound <a href="https://www.ncftp.com/ncftpd/doc/misc/ephemeral_ports.html">ephemeral ports</a> 1024-65535, which are also called "local" ports in Linux. These are the ports that could be used for connection back to the EC2 instance from whatever outgoing connections it originates.</p>
+<p><code>lua
+ +-----------------------+
+ |  Network ACL          |
+ |                       |
+ |  Inbound ports:       |
+ |  1024-65535          |
+ |                       |
+ |  Outbound ports:      |
+ |  0-65535              |
+ +-----------------------+
+         ^
+         |
+         v
+ +-----------------------+
+ |  Subnet               |
+ |                       |
+ | +-------------------+ |
+ | | AWS EC2 Instance  | |
+ | +-------------------+ |
+ |                       |
+ +-----------------------+</code></p>
+<p>Outbound connections are now possible:</p>
+<p><code>[ec2-user@ip-10-0-12-197 ~]$ nc -w 1 -v google.com 80
+Ncat: Version 7.93 ( https://nmap.org/ncat )
+Ncat: Connected to 142.250.31.101:80.</code></p>
+<p>When we perform an <code>nmap</code> <code>ACK</code> scan, the scan should show that a <code>RST</code> response was returned from the EC2 instance.</p>
+<p><code>eddie@pop-os:~$ sudo nmap -ddd -T4 -Pn -sA 54.221.77.100
+...OUTPUT TRUNCATED BY ME...
+1001/tcp  filtered   webpush              no-response
+1002/tcp  filtered   windows-icfw         no-response
+1007/tcp  filtered   unknown              no-response
+1009/tcp  filtered   unknown              no-response
+1010/tcp  filtered   surf                 no-response
+1011/tcp  filtered   unknown              no-response
+1021/tcp  filtered   exp1                 no-response
+1022/tcp  filtered   exp2                 no-response
+1023/tcp  filtered   netvenuechat         no-response
+1024/tcp  unfiltered kdm                  reset ttl 115
+1025/tcp  unfiltered NFS-or-IIS           reset ttl 115
+1026/tcp  unfiltered LSA-or-nterm         reset ttl 113
+1027/tcp  unfiltered IIS                  reset ttl 114
+1028/tcp  unfiltered unknown              reset ttl 113
+1029/tcp  unfiltered ms-lsa               reset ttl 115
+1030/tcp  unfiltered iad1                 reset ttl 114
+1031/tcp  unfiltered iad2                 reset ttl 113
+1032/tcp  unfiltered iad3                 reset ttl 115
+...OUTPUT TRUNCATED BY ME...</code></p>
+<p>What happened here?</p>
+<p>The <code>nmap</code> scan I performed sent <code>ACK</code> packets to the top 1000 most interesting ports (as defined by <code>nmap</code>), just like in the previous scan, but during this scan, some ports showed as "unfiltered" rather than "filtered."</p>
+<p>Notice that the return status switched from <code>filtered</code> to <code>unfiltered</code> immediately when we started scanning port 1024. This is not an accident - our firewall (NACL) has ports <code>1024-65535</code> allowed for inbound connections. This doesn't tell us that those ports are <em>open</em> in <code>nmap</code> terms - there may be (in this case there is not) something listening on those ports on the target host, but all we can tell from this that the Firewall allowed the <code>ACK</code> packet to reach the EC2 instance, and the instance returned a <code>RST</code> packet.</p>
+<p>For more information about <code>nmap</code>'s definitions of open, closed, filtered, unfiltered, etc., see the <a href="https://nmap.org/book/man-port-scanning-basics.html">nmap docs</a>.</p>
+<h2>Security Group (Stateful)</h2>
+<p>Now, if we allow all inbound and outbound ports on the NACL so that all our traffic is handled by the Security Group attached to the EC2 instance, we can shift our test to the Security Group. We'll allow all outbound ports on the Security Group, but we won't allow any inbound ports.</p>
+<p><code>lua
+ +-----------------------+
+ |  Network ACL          |
+ |                       |
+ |                       |
+ |  All inbound and      |
+ |  outbound traffic     |
+ |  allowed              |
+ +-----------------------+
+         ^
+         |
+         v
+ +-----------------------+
+ |  Subnet               |
+ |                       |
+ | +-------------------+ |
+ | | Security Group    | |
+ | |                   | |
+ | | Inbound ports:    | |
+ | | None allowed      | |
+ | | Outbound ports:   | |
+ | | 0-65535           | |
+ | +-------------------+ |
+ | | AWS EC2 Instance  | |
+ | |                   | |
+ | +-------------------+ |
+ |                       |
+ +-----------------------+</code></p>
+<p>When we <code>ACK</code> scan the host this time, we see that all the ports are filtered:</p>
+<p>```
+eddie@pop-os:~$ sudo nmap -T4 -Pn -sA 54.221.77.100 
+[sudo] password for eddie: 
+Starting Nmap 7.80 ( https://nmap.org ) at 2024-01-26 15:32 EST
+Nmap scan report for ec2-54-221-77-100.compute-1.amazonaws.com (54.221.77.100)
+Host is up (0.00064s latency).
+Not shown: 999 filtered ports
+PORT   STATE      SERVICE
+53/tcp unfiltered domain</p>
+<p>Nmap done: 1 IP address (1 host up) scanned in 6.30 seconds
+```</p>
+<p>And yet, outbound connections from the host still work:</p>
+<p><code>[ec2-user@ip-10-0-12-197 ~]$ nc -w 1 -v google.com 80
+Ncat: Version 7.93 ( https://nmap.org/ncat )
+Ncat: Connected to 142.250.31.101:80.</code></p>
+<p><code>html
+[ec2-user@ip-10-0-12-197 ~]$ curl google.com
+&lt;HTML&gt;&lt;HEAD&gt;&lt;meta http-equiv="content-type" content="text/html;charset=utf-8"&gt;
+&lt;TITLE&gt;301 Moved&lt;/TITLE&gt;&lt;/HEAD&gt;&lt;BODY&gt;
+&lt;H1&gt;301 Moved&lt;/H1&gt;
+The document has moved
+&lt;A HREF="http://www.google.com/"&gt;here&lt;/A&gt;.
+&lt;/BODY&gt;&lt;/HTML&gt;</code></p>
+</main>
+<aside>
+<h1>Tags</h1>
+<ul>
+<li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+<li><a href="./tag/aws.html">aws</a></li>
+<li><a href="./tag/career.html">career</a></li>
+<li><a href="./tag/cdk.html">cdk</a></li>
+<li><a href="./tag/docker.html">docker</a></li>
+<li><a href="./tag/evergreen.html">evergreen</a></li>
+<li><a href="./tag/ham-radio.html">ham radio</a></li>
+<li><a href="./tag/jsii.html">jsii</a></li>
+<li><a href="./tag/kids.html">kids</a></li>
+<li><a href="./tag/learning.html">learning</a></li>
+<li><a href="./tag/linux.html">linux</a></li>
+<li><a href="./tag/open-source.html">open source</a></li>
+<li><a href="./tag/parenting.html">parenting</a></li>
+<li><a href="./tag/project-management.html">project management</a></li>
+<li><a href="./tag/projen.html">projen</a></li>
+<li><a href="./tag/python.html">python</a></li>
+<li><a href="./tag/raspi.html">raspi</a></li>
+<li><a href="./tag/resume.html">resume</a></li>
+<li><a href="./tag/security.html">security</a></li>
+<li><a href="./tag/shell.html">shell</a></li>
+<li><a href="./tag/software-development.html">software development</a></li>
+<li><a href="./tag/ubitx.html">ubitx</a></li>
+<li><a href="./tag/xonsh.html">xonsh</a></li>
+<li><a href="./tag/xontribs.html">xontribs</a></li>
+</ul>
+</aside>
+<script async="" data-goatcounter="https://dinogalactic.goatcounter.com/count" src="//gc.zgo.at/count.js"></script> </body>
+</html>
