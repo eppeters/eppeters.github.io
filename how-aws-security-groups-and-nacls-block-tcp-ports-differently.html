@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>dinogalactic — How AWS Security Groups and NACLs block TCP ports differently</title>
+<!-- Primary Meta Tags -->
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="./theme/css/typesetter.css" rel="stylesheet"/>
+<link href="./theme/css/typesetter-extensions.css" rel="stylesheet"/>
+<link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="alternate" title="dinogalactic Full Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/feeds/other.atom.xml" rel="alternate" title="dinogalactic Categories Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/how-aws-security-groups-and-nacls-block-tcp-ports-differently.html" rel="canonical"/><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "dinogalactic", "item": "https://www.dinogalactic.com"}, {"@type": "ListItem", "position": 2, "name": "How aws security groups and nacls block tcp ports differently", "item": "https://www.dinogalactic.com/how-aws-security-groups-and-nacls-block-tcp-ports-differently.html"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "author": {"@type": "Person", "name": "Eddie Peters"}, "publisher": {"@type": "Organization", "name": "dinogalactic"}, "headline": "How AWS Security Groups and NACLs block TCP ports differently", "about": "other", "datePublished": "2024-02-04 06:00"}</script><meta content="summary" name="twitter:card"/><meta content="https://www.dinogalactic.com/how-aws-security-groups-and-nacls-block-tcp-ports-differently.html" property="og:url"/><meta content="article" property="og:type"/><meta content="How AWS Security Groups and NACLs block TCP ports differently" property="og:title"/><meta content="Exploring the differences between the ways AWS EC2 Security Groups and AWS EC2 Network Access Control Lists (NACLs) block TCP ports and port scanning." property="og:description"/><meta content="en_US" property="og:locale"/></head>
+<body>
+<header><a alt="dinogalactic" href="./">dinogalactic</a></header>
+<nav>
+<h1>Navigation</h1>
+<ul>
+<li><a href="./pages/about.html">about</a></li>
+<li><a href="./pages/booksread.html">books</a></li>
+<li><a href="./category/aws.html">AWS</a></li>
+<li><a href="./category/misc.html">misc</a></li>
+<li><a href="./category/other.html">other</a></li>
+<li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+</ul>
+</nav>
+<main>
+<h1>How AWS Security Groups and NACLs block TCP ports differently</h1>
+<p>Several years ago at an AWS training course, the trainer said that EC2 security groups are "stateful," whereas EC2 NACLs (Network Access Control Lists) are not. The consequence was that you could easily set up "outgoing only" connections on a security group by adding an outbound rule, but on a NACL, you'd have to configure both an outbound and an inbound rule to allow even outbound connections. The NACL had to be configured this way or it wouldn't let the responses come back from whatever network location your system was trying to connect to. But I've never <em>really</em> known what he meant.</p>
+<p>In reading the <a href="https://nmap.org/book/determining-firewall-rules.html#fw-rules-SYN"><code>nmap</code> Book section on Avoiding Intrusion Detection and Prevention Systems when port scanning</a>, I found an explanation of <code>nmap</code>'s <code>ACK</code> scanning feature that helped me understand what "stateless" really means in the above context. </p>
+<p>Here's the excerpt from the <code>nmap</code> book:</p>
+<blockquote>
+<p>Many networks allow nearly unrestricted outbound connections, but wish to block Internet hosts from initiating connections back to them. Blocking incoming <code>SYN</code> packets (without the <code>ACK</code> bit set) is an easy way to do this, but it still allows any <code>ACK</code> packets through. Blocking those <code>ACK</code> packets is more difficult, because they do not tell which side started the connection. To block unsolicited <code>ACK</code> packets (as sent by the Nmap <code>ACK</code> scan), while allowing <code>ACK</code> packets belonging to legitimate connections, firewalls must statefully watch every established connection to determine whether a given <code>ACK</code> is appropriate.</p>
+</blockquote>
+<p>Let's do two sets of tests: one focused on NACLs and one focused on Security Groups.</p>
+<p>In these first tests (focused on the NACL), the EC2 instance has a Security Group, but all traffic is allowed (both inbound and outbound) on that Security Group. I did this because every EC2 instance must have a security group in AWS, and I wanted to focus on only the NACL for now, so the Security Group is just passing traffic through.</p>
+<h2>NACL (Stateless)</h2>
+<p>First we'll put the EC2 instance behind a NACL that has all outbound ports allowed but all inbound ports disallowed. We should expect all ports to show as filtered in an <code>nmap</code> <code>ACK</code> scan. More important to understand right now is that any outgoing TCP connections, which require packets to be sent back to establish the connection and transfer data, will not work.</p>
+<p>(Diagrams generated with ChatGPT)</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #555555">+-----------------------+</span>
+<span style="color: #555555">|</span>  Network ACL          <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>  Outbound ports:      <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>  <span style="color: #FF6600">0</span><span style="color: #555555">-</span><span style="color: #FF6600">65535</span>              <span style="color: #555555">|</span>
+<span style="color: #555555">+-----------------------+</span>
+        <span style="color: #555555">^</span>
+        <span style="color: #555555">|</span>
+        v
+<span style="color: #555555">+-----------------------+</span>
+<span style="color: #555555">|</span>  Subnet               <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">+-------------------+</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span> AWS EC2 Instance  <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span>                   <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span>   netcat listening<span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span>   on port <span style="color: #FF6600">80</span>      <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">+-------------------+</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">+-----------------------+</span>
+</code></pre></div>
+<p>As promised, no TCP connections to network locations outside the instance's local subnet are possible in this configuration:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #555555">[</span>ec2-user@ip-10-0-12-197 ~<span style="color: #555555">]</span>$ nc -w <span style="color: #FF6600">1</span> -v google.com <span style="color: #FF6600">80</span>
+Ncat: Version <span style="color: #FF6600">7</span>.93 <span style="color: #555555">(</span> https://nmap.org/ncat <span style="color: #555555">)</span>
+Ncat: Connection to <span style="color: #FF6600">142</span>.250.31.102 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to <span style="color: #FF6600">142</span>.250.31.113 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to <span style="color: #FF6600">142</span>.250.31.138 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to <span style="color: #FF6600">142</span>.250.31.139 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to <span style="color: #FF6600">142</span>.250.31.100 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to <span style="color: #FF6600">142</span>.250.31.101 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to <span style="color: #FF6600">2607</span>:f8b0:4004:c08::66 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Connection to <span style="color: #FF6600">2607</span>:f8b0:4004:c08::71 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Connection to <span style="color: #FF6600">2607</span>:f8b0:4004:c08::64 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Network is unreachable.
+</code></pre></div>
+<p>In this configuration, <code>nmap</code> finds that all ports (port 53 notwithstanding) are filtered:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>eddie@pop-os:~$ sudo nmap -T4 -Pn -sA <span style="color: #FF6600">54</span>.221.77.100 
+Starting Nmap <span style="color: #FF6600">7</span>.80 <span style="color: #555555">(</span> https://nmap.org <span style="color: #555555">)</span> at <span style="color: #FF6600">2024</span>-01-26 <span style="color: #FF6600">14</span>:59 EST
+Nmap scan report <span style="color: #006699; font-weight: bold">for</span> ec2-54-221-77-100.compute-1.amazonaws.com <span style="color: #555555">(</span><span style="color: #FF6600">54</span>.221.77.100<span style="color: #555555">)</span>
+Host is up <span style="color: #555555">(</span><span style="color: #FF6600">0</span>.0020s latency<span style="color: #555555">)</span>.
+Not shown: <span style="color: #FF6600">999</span> filtered ports
+PORT   STATE      SERVICE
+<span style="color: #FF6600">53</span>/tcp unfiltered domain
+</code></pre></div>
+<p>Nmap done: 1 IP address (1 host up) scanned in 4.31 seconds</p>
+<p>Side note: I'm actually not sure why port 53 is unfiltered here, so I'll try to figure that out separately. Regardless, all other scanned ports are filtered. We could try all 65536 ports, but there's no need at least for our demonstration.</p>
+<p>Next, we'll add an inbound port range rule to the NACL. This will allow inbound <a href="https://www.ncftp.com/ncftpd/doc/misc/ephemeral_ports.html">ephemeral ports</a> 1024-65535, which are also called "local" ports in Linux. These are the ports that could be used for connection back to the EC2 instance from whatever outgoing connections it originates.</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #555555">+-----------------------+</span>
+<span style="color: #555555">|</span>  Network ACL          <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>  Inbound ports:       <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>  <span style="color: #FF6600">1024</span><span style="color: #555555">-</span><span style="color: #FF6600">65535</span>          <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>  Outbound ports:      <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>  <span style="color: #FF6600">0</span><span style="color: #555555">-</span><span style="color: #FF6600">65535</span>              <span style="color: #555555">|</span>
+<span style="color: #555555">+-----------------------+</span>
+        <span style="color: #555555">^</span>
+        <span style="color: #555555">|</span>
+        v
+<span style="color: #555555">+-----------------------+</span>
+<span style="color: #555555">|</span>  Subnet               <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">+-------------------+</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span> AWS EC2 Instance  <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">+-------------------+</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">+-----------------------+</span>
+</code></pre></div>
+<p>Outbound connections are now possible:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #555555">[</span>ec2-user@ip-10-0-12-197 ~<span style="color: #555555">]</span>$ nc -w <span style="color: #FF6600">1</span> -v google.com <span style="color: #FF6600">80</span>
+Ncat: Version <span style="color: #FF6600">7</span>.93 <span style="color: #555555">(</span> https://nmap.org/ncat <span style="color: #555555">)</span>
+Ncat: Connected to <span style="color: #FF6600">142</span>.250.31.101:80.
+</code></pre></div>
+<p>When we perform an <code>nmap</code> <code>ACK</code> scan, the scan should show that a <code>RST</code> response was returned from the EC2 instance.</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>eddie@pop-os:~$ sudo nmap -ddd -T4 -Pn -sA <span style="color: #FF6600">54</span>.221.77.100
+...OUTPUT TRUNCATED BY ME...
+<span style="color: #FF6600">1001</span>/tcp  filtered   webpush              no-response
+<span style="color: #FF6600">1002</span>/tcp  filtered   windows-icfw         no-response
+<span style="color: #FF6600">1007</span>/tcp  filtered   unknown              no-response
+<span style="color: #FF6600">1009</span>/tcp  filtered   unknown              no-response
+<span style="color: #FF6600">1010</span>/tcp  filtered   surf                 no-response
+<span style="color: #FF6600">1011</span>/tcp  filtered   unknown              no-response
+<span style="color: #FF6600">1021</span>/tcp  filtered   exp1                 no-response
+<span style="color: #FF6600">1022</span>/tcp  filtered   exp2                 no-response
+<span style="color: #FF6600">1023</span>/tcp  filtered   netvenuechat         no-response
+<span style="color: #FF6600">1024</span>/tcp  unfiltered kdm                  reset ttl <span style="color: #FF6600">115</span>
+<span style="color: #FF6600">1025</span>/tcp  unfiltered NFS-or-IIS           reset ttl <span style="color: #FF6600">115</span>
+<span style="color: #FF6600">1026</span>/tcp  unfiltered LSA-or-nterm         reset ttl <span style="color: #FF6600">113</span>
+<span style="color: #FF6600">1027</span>/tcp  unfiltered IIS                  reset ttl <span style="color: #FF6600">114</span>
+<span style="color: #FF6600">1028</span>/tcp  unfiltered unknown              reset ttl <span style="color: #FF6600">113</span>
+<span style="color: #FF6600">1029</span>/tcp  unfiltered ms-lsa               reset ttl <span style="color: #FF6600">115</span>
+<span style="color: #FF6600">1030</span>/tcp  unfiltered iad1                 reset ttl <span style="color: #FF6600">114</span>
+<span style="color: #FF6600">1031</span>/tcp  unfiltered iad2                 reset ttl <span style="color: #FF6600">113</span>
+<span style="color: #FF6600">1032</span>/tcp  unfiltered iad3                 reset ttl <span style="color: #FF6600">115</span>
+...OUTPUT TRUNCATED BY ME...
+</code></pre></div>
+<p>What happened here?</p>
+<p>The <code>nmap</code> scan I performed sent <code>ACK</code> packets to the top 1000 most interesting ports (as defined by <code>nmap</code>), just like in the previous scan, but during this scan, some ports showed as "unfiltered" rather than "filtered."</p>
+<p>Notice that the return status switched from <code>filtered</code> to <code>unfiltered</code> immediately when we started scanning port 1024. This is not an accident - our firewall (NACL) has ports <code>1024-65535</code> allowed for inbound connections. This doesn't tell us that those ports are <em>open</em> in <code>nmap</code> terms - there may be (in this case there is not) something listening on those ports on the target host, but all we can tell from this that the Firewall allowed the <code>ACK</code> packet to reach the EC2 instance, and the instance returned a <code>RST</code> packet.</p>
+<p>For more information about <code>nmap</code>'s definitions of open, closed, filtered, unfiltered, etc., see the <a href="https://nmap.org/book/man-port-scanning-basics.html">nmap docs</a>.</p>
+<h2>Security Group (Stateful)</h2>
+<p>Now, if we allow all inbound and outbound ports on the NACL so that all our traffic is handled by the Security Group attached to the EC2 instance, we can shift our test to the Security Group. We'll allow all outbound ports on the Security Group, but we won't allow any inbound ports.</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #555555">+-----------------------+</span>
+<span style="color: #555555">|</span>  Network ACL          <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>  All inbound <span style="color: #000000; font-weight: bold">and</span>      <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>  outbound traffic     <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>  allowed              <span style="color: #555555">|</span>
+<span style="color: #555555">+-----------------------+</span>
+        <span style="color: #555555">^</span>
+        <span style="color: #555555">|</span>
+        v
+<span style="color: #555555">+-----------------------+</span>
+<span style="color: #555555">|</span>  Subnet               <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">+-------------------+</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span> Security Group    <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span>                   <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span> Inbound ports:    <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span> None allowed      <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span> Outbound ports:   <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span> <span style="color: #FF6600">0</span><span style="color: #555555">-</span><span style="color: #FF6600">65535</span>           <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">+-------------------+</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span> AWS EC2 Instance  <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">|</span>                   <span style="color: #555555">|</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span> <span style="color: #555555">+-------------------+</span> <span style="color: #555555">|</span>
+<span style="color: #555555">|</span>                       <span style="color: #555555">|</span>
+<span style="color: #555555">+-----------------------+</span>
+</code></pre></div>
+<p>When we <code>ACK</code> scan the host this time, we see that all the ports are filtered:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>eddie@pop-os:~$ sudo nmap -T4 -Pn -sA <span style="color: #FF6600">54</span>.221.77.100 
+<span style="color: #555555">[</span>sudo<span style="color: #555555">]</span> password <span style="color: #006699; font-weight: bold">for</span> eddie: 
+Starting Nmap <span style="color: #FF6600">7</span>.80 <span style="color: #555555">(</span> https://nmap.org <span style="color: #555555">)</span> at <span style="color: #FF6600">2024</span>-01-26 <span style="color: #FF6600">15</span>:32 EST
+Nmap scan report <span style="color: #006699; font-weight: bold">for</span> ec2-54-221-77-100.compute-1.amazonaws.com <span style="color: #555555">(</span><span style="color: #FF6600">54</span>.221.77.100<span style="color: #555555">)</span>
+Host is up <span style="color: #555555">(</span><span style="color: #FF6600">0</span>.00064s latency<span style="color: #555555">)</span>.
+Not shown: <span style="color: #FF6600">999</span> filtered ports
+PORT   STATE      SERVICE
+<span style="color: #FF6600">53</span>/tcp unfiltered domain
+
+Nmap <span style="color: #006699; font-weight: bold">done</span>: <span style="color: #FF6600">1</span> IP address <span style="color: #555555">(</span><span style="color: #FF6600">1</span> host up<span style="color: #555555">)</span> scanned in <span style="color: #FF6600">6</span>.30 seconds
+</code></pre></div>
+<p>And yet, outbound connections from the host still work:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #555555">[</span>ec2-user@ip-10-0-12-197 ~<span style="color: #555555">]</span>$ nc -w <span style="color: #FF6600">1</span> -v google.com <span style="color: #FF6600">80</span>
+Ncat: Version <span style="color: #FF6600">7</span>.93 <span style="color: #555555">(</span> https://nmap.org/ncat <span style="color: #555555">)</span>
+Ncat: Connected to <span style="color: #FF6600">142</span>.250.31.101:80.
+</code></pre></div>
+<p>Curling google.com:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>[ec2-user@ip-10-0-12-197 ~]$ curl google.com
+&lt;<span style="color: #330099; font-weight: bold">HTML</span>&gt;&lt;<span style="color: #330099; font-weight: bold">HEAD</span>&gt;&lt;<span style="color: #330099; font-weight: bold">meta</span> <span style="color: #330099">http-equiv</span><span style="color: #555555">=</span><span style="color: #CC3300">"content-type"</span> <span style="color: #330099">content</span><span style="color: #555555">=</span><span style="color: #CC3300">"text/html;charset=utf-8"</span>&gt;
+&lt;<span style="color: #330099; font-weight: bold">TITLE</span>&gt;301 Moved&lt;/<span style="color: #330099; font-weight: bold">TITLE</span>&gt;&lt;/<span style="color: #330099; font-weight: bold">HEAD</span>&gt;&lt;<span style="color: #330099; font-weight: bold">BODY</span>&gt;
+&lt;<span style="color: #330099; font-weight: bold">H1</span>&gt;301 Moved&lt;/<span style="color: #330099; font-weight: bold">H1</span>&gt;
+The document has moved
+&lt;<span style="color: #330099; font-weight: bold">A</span> <span style="color: #330099">HREF</span><span style="color: #555555">=</span><span style="color: #CC3300">"http://www.google.com/"</span>&gt;here&lt;/<span style="color: #330099; font-weight: bold">A</span>&gt;.
+&lt;/<span style="color: #330099; font-weight: bold">BODY</span>&gt;&lt;/<span style="color: #330099; font-weight: bold">HTML</span>&gt;
+</code></pre></div>
+</main>
+<aside>
+<h1>Tags</h1>
+<ul>
+<li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+<li><a href="./tag/aws.html">aws</a></li>
+<li><a href="./tag/career.html">career</a></li>
+<li><a href="./tag/cdk.html">cdk</a></li>
+<li><a href="./tag/docker.html">docker</a></li>
+<li><a href="./tag/evergreen.html">evergreen</a></li>
+<li><a href="./tag/ham-radio.html">ham radio</a></li>
+<li><a href="./tag/jsii.html">jsii</a></li>
+<li><a href="./tag/kids.html">kids</a></li>
+<li><a href="./tag/learning.html">learning</a></li>
+<li><a href="./tag/linux.html">linux</a></li>
+<li><a href="./tag/open-source.html">open source</a></li>
+<li><a href="./tag/parenting.html">parenting</a></li>
+<li><a href="./tag/project-management.html">project management</a></li>
+<li><a href="./tag/projen.html">projen</a></li>
+<li><a href="./tag/python.html">python</a></li>
+<li><a href="./tag/raspi.html">raspi</a></li>
+<li><a href="./tag/resume.html">resume</a></li>
+<li><a href="./tag/security.html">security</a></li>
+<li><a href="./tag/shell.html">shell</a></li>
+<li><a href="./tag/software-development.html">software development</a></li>
+<li><a href="./tag/ubitx.html">ubitx</a></li>
+<li><a href="./tag/xonsh.html">xonsh</a></li>
+<li><a href="./tag/xontribs.html">xontribs</a></li>
+</ul>
+</aside>
+<script async="" data-goatcounter="https://dinogalactic.goatcounter.com/count" src="//gc.zgo.at/count.js"></script> </body>
+</html>
