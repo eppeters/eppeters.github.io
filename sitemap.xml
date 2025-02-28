@@ -5,7 +5,7 @@ xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
 <url>
 <loc>https://www.dinogalactic.com/</loc>
-<lastmod>2024-02-24T20:37:03-00:00</lastmod>
+<lastmod>2025-02-28T21:13:44-00:00</lastmod>
 <changefreq>daily</changefreq>
 <priority>0.5</priority>
 </url>
@@ -20,6 +20,13 @@ xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
 <loc>https://www.dinogalactic.com/pages/booksread.html</loc>
 <lastmod>2021-01-05T06:00:00-05:00</lastmod>
+<changefreq>monthly</changefreq>
+<priority>0.5</priority>
+</url>
+
+<url>
+<loc>https://www.dinogalactic.com/reverse-engineering-an-obfuscated-javascript-rickroll.html</loc>
+<lastmod>2025-02-28T14:00:00-05:00</lastmod>
 <changefreq>monthly</changefreq>
 <priority>0.5</priority>
 </url>
@@ -138,7 +145,7 @@ xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
 <url>
 <loc>https://www.dinogalactic.com/author/eddie-peters.html</loc>
-<lastmod>2024-02-19T06:00:00-04:56</lastmod>
+<lastmod>2025-02-28T14:00:00-04:56</lastmod>
 <changefreq>daily</changefreq>
 <priority>0.5</priority>
 </url>

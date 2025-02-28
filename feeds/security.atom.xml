@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>dinogalactic - security</title><link href="https://www.dinogalactic.com/" rel="alternate"></link><link href="https://www.dinogalactic.com/feeds/security.atom.xml" rel="self"></link><id>https://www.dinogalactic.com/</id><updated>2025-02-28T14:00:00-05:00</updated><entry><title>Reverse engineering an obfuscated JavaScript rickroll</title><link href="https://www.dinogalactic.com/reverse-engineering-an-obfuscated-javascript-rickroll.html" rel="alternate"></link><published>2025-02-28T14:00:00-05:00</published><updated>2025-02-28T14:00:00-05:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2025-02-28:/reverse-engineering-an-obfuscated-javascript-rickroll.html</id><summary type="html">&lt;p&gt;Or: What encodings are and how browsers work, and the origins of security and how we live in the world without screaming most of the time.&lt;/p&gt;
+&lt;p&gt;In which I get obsessed with understanding a silly little piece of code I found.&lt;/p&gt;
+&lt;h2&gt;Intro&lt;/h2&gt;
+&lt;p&gt;I found &lt;a href="https://h.43z.one/"&gt;this guy's website&lt;/a&gt; where, among other …&lt;/p&gt;</summary><content type="html">&lt;p&gt;Or: What encodings are and how browsers work, and the origins of security and how we live in the world without screaming most of the time.&lt;/p&gt;
+&lt;p&gt;In which I get obsessed with understanding a silly little piece of code I found.&lt;/p&gt;
+&lt;h2&gt;Intro&lt;/h2&gt;
+&lt;p&gt;I found &lt;a href="https://h.43z.one/"&gt;this guy's website&lt;/a&gt; where, among other cute things, he included the following bit of JavaScript:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;unescape(escape&lt;span style="color: #CC3300"&gt;`󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮󠅡󠄠󠅲󠅵󠅮󠄠󠅡󠅲󠅯󠅵󠅮󠅤󠄠󠅡󠅮󠅤󠄠󠅤󠅥󠅳󠅥󠅲󠅴󠄠󠅹󠅯󠅵`&lt;/span&gt;.replace(&lt;span style="color: #33AAAA"&gt;/u.{8}/g&lt;/span&gt;,&lt;span style="color: #CC3300"&gt;&amp;#39;&amp;#39;&lt;/span&gt;))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;I, of course, copied it and ran it in the browser console. The result was the following string:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;"Never gonna run around and desert you"&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;How does this work? I did some preliminary investigation and found that it's ultimately a bunch of non-printable characters, escaped, and then that escaped value has &lt;code&gt;replace()&lt;/code&gt; run on it, and then the percent-encoded-ASCII result is unescaped into the final string.&lt;/p&gt;
+&lt;p&gt;Here's the canonical hex-dump of the input:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;🐔＄ echo &amp;quot;unescape(escape`󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮`.replace(/u.{8}/g,&amp;#39;&amp;#39;))&amp;quot; | hexdump -C                                                                                                                  at 10:21:32
+00000000  75 6e 65 73 63 61 70 65  28 65 73 63 61 70 65 60  |unescape(escape`|
+00000010  f3 a0 85 8e f3 a0 85 a5  f3 a0 85 b6 f3 a0 85 a5  |................|
+00000020  f3 a0 85 b2 f3 a0 84 a0  f3 a0 85 a7 f3 a0 85 af  |................|
+00000030  f3 a0 85 ae f3 a0 85 ae  f3 a0 85 a1 f3 a0 84 a0  |................|
+00000040  f3 a0 85 b2 f3 a0 85 b5  f3 a0 85 ae f3 a0 84 a0  |................|
+00000050  f3 a0 85 a1 f3 a0 85 b2  f3 a0 85 af f3 a0 85 b5  |................|
+00000060  f3 a0 85 ae f3 a0 85 a4  f3 a0 84 a0 f3 a0 85 a1  |................|
+00000070  f3 a0 85 ae f3 a0 85 a4  f3 a0 84 a0 f3 a0 85 a4  |................|
+00000080  f3 a0 85 a5 f3 a0 85 b3  f3 a0 85 a5 f3 a0 85 b2  |................|
+00000090  f3 a0 85 b4 f3 a0 84 a0  f3 a0 85 b9 f3 a0 85 af  |................|
+000000a0  f3 a0 85 b5 60 2e 72 65  70 6c 61 63 65 28 2f 75  |....`.replace(/u|
+000000b0  2e 7b 38 7d 2f 67 2c 27  27 29 29 0a              |.{8}/g,&amp;#39;&amp;#39;)).|
+000000bc
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Just how does someone go from an ASCII string like &lt;code&gt;Never gonna run around and desert you&lt;/code&gt; (sic) to that obfuscated JavaScript? Let's find out!&lt;/p&gt;
+&lt;h2&gt;The parts&lt;/h2&gt;
+&lt;p&gt;Let's examine the input, the obfuscated JavaScript. A few parts of it catch my attention:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;There are non-printing characters between the backticks.&lt;/li&gt;
+&lt;li&gt;The JS &lt;code&gt;escape&lt;/code&gt; function, if that even is a function, is seemingly called without parentheses.&lt;/li&gt;
+&lt;li&gt;The &lt;code&gt;replace()&lt;/code&gt; call effectively removes a literal &lt;code&gt;u&lt;/code&gt; character followed by 8 of any matching character.&lt;/li&gt;
+&lt;li&gt;The final value is run through JS's &lt;code&gt;unescape()&lt;/code&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;We can take these as parts, in order. The &lt;code&gt;unescape(escape&lt;/code&gt;󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮&lt;code&gt;.replace(/u.{8}/g,''))&lt;/code&gt; is in infix notation, so the innermost part should be understood first, and then we'll take each layer outside of it. So, if this were an onion, the invisible text would be in the middle, and that's where we would start. The &lt;code&gt;unescape&lt;/code&gt; call would be the outside of the onion, which we will look at last.&lt;/p&gt;
+&lt;h2&gt;Part 1: The invisible part&lt;/h2&gt;
+&lt;p&gt;A function, in a general sense not specific to programming, takes input and produces an output through some steps. Here we have the function (again, not strictly in the programming sense) that takes the invisible input between the backticks and outputs &lt;code&gt;"Never gonna run around and desert you"&lt;/code&gt;. The escape, replace, and unescape are really just helpful hints at the steps that are used. Presumably many different inputs could be placed in between the backticks.&lt;/p&gt;
+&lt;p&gt;If a function takes steps and produces an output, maybe the input could be reproduced by following the steps in reverse order. So I could start with the human-readable string and wind up with the obfuscated string, presumably.&lt;/p&gt;
+&lt;p&gt;It might help to know more about the invisible input than the fact that it is invisible. Let's make some observations:&lt;/p&gt;
+&lt;p&gt;As shown above in the &lt;code&gt;hexdump -C&lt;/code&gt; output, the individual bytes are &lt;code&gt;f3&lt;/code&gt;, &lt;code&gt;a0&lt;/code&gt;, &lt;code&gt;85&lt;/code&gt;, and various other values like &lt;code&gt;8e&lt;/code&gt;. What are these values in decimal?&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span style="color: #336666"&gt;int&lt;/span&gt;(&lt;span style="color: #CC3300"&gt;&amp;#39;0xf3&amp;#39;&lt;/span&gt;, base&lt;span style="color: #555555"&gt;=&lt;/span&gt;&lt;span style="color: #FF6600"&gt;16&lt;/span&gt;)
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; &lt;span style="color: #FF6600"&gt;243&lt;/span&gt;
+
+&lt;span style="color: #336666"&gt;int&lt;/span&gt;(&lt;span style="color: #CC3300"&gt;&amp;#39;0xa0&amp;#39;&lt;/span&gt;, base&lt;span style="color: #555555"&gt;=&lt;/span&gt;&lt;span style="color: #FF6600"&gt;16&lt;/span&gt;)
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; &lt;span style="color: #FF6600"&gt;160&lt;/span&gt;
+
+&lt;span style="color: #336666"&gt;int&lt;/span&gt;(&lt;span style="color: #CC3300"&gt;&amp;#39;0x85&amp;#39;&lt;/span&gt;, base&lt;span style="color: #555555"&gt;=&lt;/span&gt;&lt;span style="color: #FF6600"&gt;16&lt;/span&gt;)
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; &lt;span style="color: #FF6600"&gt;133&lt;/span&gt;
+
+&lt;span style="color: #336666"&gt;int&lt;/span&gt;(&lt;span style="color: #CC3300"&gt;&amp;#39;0x8e&amp;#39;&lt;/span&gt;, base&lt;span style="color: #555555"&gt;=&lt;/span&gt;&lt;span style="color: #FF6600"&gt;16&lt;/span&gt;)
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; &lt;span style="color: #FF6600"&gt;142&lt;/span&gt;
+
+&lt;span style="color: #336666"&gt;bin&lt;/span&gt;(&lt;span style="color: #FF6600"&gt;243&lt;/span&gt;)
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; &lt;span style="color: #CC3300"&gt;&amp;#39;0b11110011&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;So the first byte is &lt;code&gt;0xf3&lt;/code&gt;, which in decimal is &lt;code&gt;243&lt;/code&gt;. What encoding could this be using? One guess is &lt;code&gt;UTF-16&lt;/code&gt;, since &lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String#utf-16_characters_unicode_code_points_and_grapheme_clusters"&gt;JavaScript uses &lt;code&gt;UTF-16&lt;/code&gt; for strings&lt;/a&gt;.&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span style="color: #336666"&gt;int&lt;/span&gt;(&lt;span style="color: #CC3300"&gt;&amp;#39;0xf3a0858ef3a085a5&amp;#39;&lt;/span&gt;, base&lt;span style="color: #555555"&gt;=&lt;/span&gt;&lt;span style="color: #FF6600"&gt;16&lt;/span&gt;)&lt;span style="color: #555555"&gt;.&lt;/span&gt;to_bytes(&lt;span style="color: #FF6600"&gt;8&lt;/span&gt;, &lt;span style="color: #CC3300"&gt;&amp;#39;big&amp;#39;&lt;/span&gt;)&lt;span style="color: #555555"&gt;.&lt;/span&gt;decode(&lt;span style="color: #CC3300"&gt;&amp;#39;utf-16&amp;#39;&lt;/span&gt;)
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; &lt;span style="color: #CC3300"&gt;&amp;#39;ꃳ躅ꃳꖅ&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;So when decoding 8 of these raw bytes through Python's UTF-16 codec, we see two valid, visible characters, so the invisible characters cannot be encoded in UTF-16.&lt;/p&gt;
+&lt;h2&gt;An aside: What is an encoding?&lt;/h2&gt;
+&lt;p&gt;Fundamentally, an encoding is a way of representing one set of things in another set of things by translating each item in the first bucket into an item in the second bucket. The two buckets of things could be anything. In character encodings, one bucket contains little squiggles (e.g. the letter "A" or the character "ꃳꖅ") and their bastard friends (looking at you, line-feed and carriage return), and the other bucket contains numbers. One way of organizing these buckets is to make long, ordered lists of the items, or maybe even tables. So we'd order some items earlier in the list and others later. The benefit of organizing them at all is that we can then create equivalences between items in the two buckets, e.g. we can say "this squiggle is encoded as the number 65," and the mechanism of this equivalence would be sameness of position, i.e. the item in one list is equivalent to the item in the other list if they are in the same position relative to the start of their respective lists. One of the longest, and most computing friendly, lists we know of is the set of integer numbers, so we use that to organize the numeric bucket in character encodings, and we also use it to index the list of squiggles. Indexing means creating a way to refer to an item's position in the list (position 0, 1, 2, etc.). One nice property of integers is that they can be sorted - each one is clearly less or more than any other. The squiggle bucket is tougher to deal with than the number bucket because it consists of squiggles (and a select group of goofy non-printable fuck-offs), which each have no obvious quantity. It's not clear which of "A" and "ꃳꖅ" is larger (should occur later in the list), so if someone asked us, it would not be obvious which should be given the number &lt;code&gt;4087383461&lt;/code&gt; and which should get the number &lt;code&gt;65&lt;/code&gt;. We humans have conventions for the comparison of letters, like the ABCs, which put things in a commonly understood &lt;a href="https://en.wikipedia.org/wiki/Alphabetical_order"&gt;"alphabetical" order&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The Unicode Standard is a way of ordering all the squiggles humans use in written communication. In short, it assigns a number to each of these symbols. UTF-8, UTF-16, and UTF-32 are encodings that map each of these Unicode numbers (called &lt;a href="https://infra.spec.whatwg.org/#code-points"&gt;"Unicode code points"&lt;/a&gt; to binary numbers. Each of these 3 encoding schemes encodes Unicode code points differently. For an example of different ways a single character can be encoded, check out the different ways of encoding &lt;a href="https://unicodeplus.com/U+1F95A"&gt;an egg emoji&lt;/a&gt;. Side note: in Python, you can use the hex code point identifier to specify a Unicode character using only ASCII characters, but if your codepoint is greater than 16 bits long (like 0x1595a), then you've got to use a 32-bit identified, left-padding with 0s, and an uppercase U for the escape, to let Python know a 32-bit code point identifier follows.&lt;/p&gt;
+&lt;p&gt;Another plain language explanation of Unicode and other text encodings can be found in &lt;a href="https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/"&gt;Joel on Software's often-referenced piece "The Absolute Minimum Every Software Developer Absolutely, Positively Must Know About Unicode and Character Sets (No Excuses!)"&lt;/a&gt;.&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span style="color: #CC3300"&gt;&amp;quot;&lt;/span&gt;&lt;span style="color: #CC3300; font-weight: bold"&gt;\U0001f95a&lt;/span&gt;&lt;span style="color: #CC3300"&gt;&amp;quot;&lt;/span&gt;
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; &lt;span style="color: #CC3300"&gt;&amp;#39;🥚&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;For more on how Python models strings internally, and how to specify different strings, check out &lt;a href="https://docs.python.org/3/howto/unicode.html"&gt;Python's Unicode HOWTO&lt;/a&gt;. These docs include lots of Python examples and some good tips and references about Unicode in general.&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;egg_unicode &lt;span style="color: #555555"&gt;=&lt;/span&gt; &lt;span style="color: #CC3300"&gt;&amp;quot;&lt;/span&gt;&lt;span style="color: #CC3300; font-weight: bold"&gt;\U0001f95a&lt;/span&gt;&lt;span style="color: #CC3300"&gt;&amp;quot;&lt;/span&gt;
+egg_unicode&lt;span style="color: #555555"&gt;.&lt;/span&gt;encode(&lt;span style="color: #CC3300"&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;)
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; &lt;span style="color: #CC3300"&gt;b&amp;#39;&lt;/span&gt;&lt;span style="color: #CC3300; font-weight: bold"&gt;\xf0\x9f\xa5\x9a&lt;/span&gt;&lt;span style="color: #CC3300"&gt;&amp;#39;&lt;/span&gt;
+
+egg_unicode&lt;span style="color: #555555"&gt;.&lt;/span&gt;encode(&lt;span style="color: #CC3300"&gt;&amp;#39;utf-16&amp;#39;&lt;/span&gt;)
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; &lt;span style="color: #CC3300"&gt;b&amp;#39;&lt;/span&gt;&lt;span style="color: #CC3300; font-weight: bold"&gt;\xff\xfe&lt;/span&gt;&lt;span style="color: #CC3300"&gt;&amp;gt;&lt;/span&gt;&lt;span style="color: #CC3300; font-weight: bold"&gt;\xd8&lt;/span&gt;&lt;span style="color: #CC3300"&gt;Z&lt;/span&gt;&lt;span style="color: #CC3300; font-weight: bold"&gt;\xdd&lt;/span&gt;&lt;span style="color: #CC3300"&gt;&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;strong&gt;Side note&lt;/strong&gt;: Python prints the ASCII char for a byte string representation [if the byte is in the range of printable ASCII chars](https://stackoverflow.com/questions/72392298/what-are-these-symbols-in-bytes-type]. So, for the above, the egg is really represented in 6 bytes in UTF-16.&lt;/p&gt;
+&lt;h2&gt;Part 1: The invisible part, continued&lt;/h2&gt;
+&lt;p&gt;We last learned that the invisible characters of the obfuscated code cannot be encoded as UTF-16, since the raw bytes of those invisible characters did not decode as UTF-16.&lt;/p&gt;
+&lt;p&gt;Let's think through this. The characters showing up in our browser are in fact not showing up. Why? Because they are non-printable. What does non-printable mean? Non-printable means a human cannot see them. Why can't a human see them? Why didn't our computer show us something for these characters? It means that, the web client (the browser) that got the web page's data from the server decided to tell whatever display software my computer was using NOT to print anything for those characters. Ultimately, my display driver and monitor did not display anything for those characters.&lt;/p&gt;
+&lt;p&gt;Obviously, if the web client had interpreted the data from the server as UTF-16 encoded data, it would have instructed the display software stack to display something instead of nothing, since we saw that a UTF-16 decoding of that same string produced visible characters. So in order to understand what encoding the invisible characters are in, we need to figure out how the browser decided to decode the web page data in a given encoding.&lt;/p&gt;
+&lt;h2&gt;Spoiler: The invisible stuff is UTF-8 encoded&lt;/h2&gt;
+&lt;p&gt;Let's banish the suspense. Many readers probably already know that the non-printable characters are non-printable because the bytes in the web page document were interpreted as UTF-8 encoded text, and those bytes refer to non-printable Unicode code points, so whatever display software is involved displayed nothing in their place.&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span style="color: #336666"&gt;int&lt;/span&gt;(&lt;span style="color: #CC3300"&gt;&amp;#39;0xf3a0858ef3a085a5&amp;#39;&lt;/span&gt;, base&lt;span style="color: #555555"&gt;=&lt;/span&gt;&lt;span style="color: #FF6600"&gt;16&lt;/span&gt;)&lt;span style="color: #555555"&gt;.&lt;/span&gt;to_bytes(&lt;span style="color: #FF6600"&gt;8&lt;/span&gt;, &lt;span style="color: #CC3300"&gt;&amp;#39;big&amp;#39;&lt;/span&gt;)&lt;span style="color: #555555"&gt;.&lt;/span&gt;decode(&lt;span style="color: #CC3300"&gt;&amp;#39;utf-8&amp;#39;&lt;/span&gt;)
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; &lt;span style="color: #CC3300"&gt;&amp;#39;󠅎󠅥&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Part 1: The invisible part, continued again&lt;/h2&gt;
+&lt;p&gt;But, it's interesting to go through how we know that the browser displays UTF-8. It's a good guess - UTF-8 is now everywhere, and it's a pretty good guess that HTML documents these days are usually encoded as UTF-8, and browsers decode them as UTF-8 by default. I think someone told me that as well one time.&lt;/p&gt;
+&lt;p&gt;But how do we know that a web page is in UTF-8, rather than some other encoding? Is it possible to send documents back to the browser that are not in UTF-8?&lt;/p&gt;
+&lt;p&gt;This kind of gets at what a marvel a web browser is; no, it doesn't just get at what a marvel a web browser is - it gets at what a marvel being a human, being alive in this world, and somehow functioning - that is, doing things through time - is. Most of us think of a web browser as something that displays images, text, maybe even &lt;em&gt;experiences&lt;/em&gt; to us. That's how we get through life. If we constantly held a web browser as a thing that squirts binary numbers as electrical pulses across a bunch of copper wires and then receives electrical pulses and turns them back into binary numbers that ultimately result in a cathode ray tube shooting some electrons at some phosphorescent surface.... (no one uses CRT monitors anymore, but I don't really know how our modern monitors work - maybe some liquid crystals are activated or something)... If we always thought of a browser that way, we'd be under constant mental strain while &lt;em&gt;using&lt;/em&gt; one. Some people think of browsers this way, or else we wouldn't have browsers at all, because that's how people have to think to build them. But for most of us, and all of us at least some of the time, it's easier to ignore all that detail, which is both how we live without screaming and also exactly the origin of security - we ignore detail, and thus potentially different, important ways of interpreting things, in order to get on with things.&lt;/p&gt;
+&lt;p&gt;So, if we look at a web browser through this more detailed, but no more accurate description, we see some software that interprets bytes from the wire. When receiving some stream of bytes from the computer's operating system, the browser must have some way to know what encoding the data is in, so it can turn the bytes into something meaningful to humans by telling the computer's display software what to display.&lt;/p&gt;
+&lt;h2&gt;An aside: How does a browser determine the encoding of the bytes it receives?&lt;/h2&gt;
+&lt;p&gt;It depends. It especially depends on what type of file the browser thinks it is receiving because some algorithm has to be used to detect a document's encoding, and that algorithm may differ depending on the type of file being received. Let's stick to HTML here for simplicity. In the case of HTML, the algorithm browsers should use to detect content type is pretty well defined. Also, newer HTML documents &lt;a href="https://html.spec.whatwg.org/multipage/semantics.html#charset:encoding"&gt;will likely use UTF-8&lt;/a&gt; due to WHATWG's standard for Encodings. That doesn't mean browsers assume things are UTF-8, though. When dealing with older HTML documents, various encodings can be used, and anyone can still create documents with any encoding, though some &lt;a href=""&gt;encodings like UTF-7 are prohibited by modern browsers&lt;/a&gt; due to &lt;a href="https://shiflett.org/blog/2005/googles-xss-vulnerability"&gt;historical security issues&lt;/a&gt;. A fun thing is that UTF-16 is still acknowledged to present significant security issues, but UTF-16 is too big to fail.&lt;/p&gt;
+&lt;p&gt;In short, as best I can tell, a browser probably considers the following sources of encoding in priority order from highest to lowest:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;The Content-Encoding header in an HTTP response. This doesn't require looking at the content of the document, but it may differ from the encoding of the actual document. WHATWG has created a &lt;a href="https://mimesniff.spec.whatwg.org/#mime-type-sniffing-algorithm"&gt;MIME sniffing algorithm&lt;/a&gt; to give a standard way of figuring out the MIME type.&lt;/li&gt;
+&lt;li&gt;The &lt;a href="https://en.wikipedia.org/wiki/Byte_order_mark"&gt;Byte Order Mark (BOM)&lt;/a&gt;, if present.&lt;/li&gt;
+&lt;li&gt;Metadata present in a &lt;a href="https://html.spec.whatwg.org/multipage/urls-and-fetching.html#extracting-character-encodings-from-meta-elements"&gt;&lt;code&gt;meta&lt;/code&gt; element within the document&lt;/a&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;This short explanation is all based on standards. In reality, what matters is what browsers do. I'm sure there are some strange bugs out there involving older encodings. &lt;/p&gt;
+&lt;h2&gt;Part 1: The invisible part, wrapped up&lt;/h2&gt;
+&lt;p&gt;In the case of the &lt;a href="https://h.43z.one/"&gt;page I originally found that bit of obfuscated code on&lt;/a&gt;, the charset is specified in the &lt;code&gt;head&lt;/code&gt; element of the HTML, inside a &lt;code&gt;meta&lt;/code&gt; tag: &lt;code&gt;&amp;lt;meta charset="UTF-8"&amp;gt;&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;So, the trick must work by using non-printable code-points, encoded in UTF-8. When these are entered, by copying and pasting or whatever, as the contents of a JavaScript string, they will be converted to UTF-16 bytes, since &lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String#utf-16_characters_unicode_code_points_and_grapheme_clusters"&gt;that's how JavaScript stores strings&lt;/a&gt;. JavaScript's interpreter, or some component of the browser that interacts with the interpreter, probably decodes the UTF-8 bytes to Unicode values, then encodes the same values as UTF-16 in the interpreter's memory. So let's pretend our invisible byte string is now stored inside the interpeter, decoded to Unicode and then encoded to UTF-16.&lt;/p&gt;
+&lt;p&gt;Below is a preview of the hex bytes we should see if we are able to print the byte content of the JavaScript string:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;[&lt;span style="color: #336666"&gt;hex&lt;/span&gt;(b) &lt;span style="color: #006699; font-weight: bold"&gt;for&lt;/span&gt; b &lt;span style="color: #000000; font-weight: bold"&gt;in&lt;/span&gt; &lt;span style="color: #CC3300"&gt;&amp;#39;󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮&amp;#39;&lt;/span&gt;&lt;span style="color: #555555"&gt;.&lt;/span&gt;encode(&lt;span style="color: #CC3300"&gt;&amp;#39;utf-16be&amp;#39;&lt;/span&gt;)][:&lt;span style="color: #FF6600"&gt;10&lt;/span&gt;]
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; [&lt;span style="color: #CC3300"&gt;&amp;#39;0xdb&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0x40&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xdd&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0x4e&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xdb&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0x40&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xdd&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0x65&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xdb&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0x40&amp;#39;&lt;/span&gt;]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Note that I used &lt;code&gt;utf-16be&lt;/code&gt; as the encoding. UTF-16 cares about byte order (UTF-8 does not). If we use &lt;code&gt;utf-16&lt;/code&gt;, it defaults to little endian (this might be due to my own CPU architecture, but I'm not sure). &lt;code&gt;utf-16&lt;/code&gt; or &lt;code&gt;utf-16le&lt;/code&gt; produces different values, of course:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;[hex(b) &lt;span style="color: #006699; font-weight: bold"&gt;for&lt;/span&gt; b &lt;span style="color: #006699; font-weight: bold"&gt;in&lt;/span&gt; &lt;span style="color: #CC3300"&gt;&amp;#39;󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮&amp;#39;&lt;/span&gt;.encode(&lt;span style="color: #CC3300"&gt;&amp;#39;utf-16le&amp;#39;&lt;/span&gt;)][:&lt;span style="color: #FF6600"&gt;10&lt;/span&gt;] &lt;span style="color: #555555"&gt;#&lt;/span&gt; little endian (&lt;span style="color: #006699; font-weight: bold"&gt;not&lt;/span&gt; actually used &lt;span style="color: #006699; font-weight: bold"&gt;by&lt;/span&gt; JS, &lt;span style="color: #006699; font-weight: bold"&gt;on&lt;/span&gt; my &lt;span style="color: #006699; font-weight: bold"&gt;system&lt;/span&gt; &lt;span style="color: #006699; font-weight: bold"&gt;at&lt;/span&gt; least)
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; [&lt;span style="color: #CC3300"&gt;&amp;#39;0x40&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xdb&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0x4e&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xdd&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0x40&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xdb&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0x65&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xdd&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0x40&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xdb&amp;#39;&lt;/span&gt;]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Disregard the above. We only care about big-endian UTF-16, as we will see.&lt;/p&gt;
+&lt;p&gt;At this point, you may be wondering what kinds of non-printable characters are being used. To find out, we can look up the non-printing Unicode code points. To get those we can do this:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;[&lt;span style="color: #336666"&gt;hex&lt;/span&gt;(&lt;span style="color: #336666"&gt;ord&lt;/span&gt;(l)) &lt;span style="color: #006699; font-weight: bold"&gt;for&lt;/span&gt; l &lt;span style="color: #000000; font-weight: bold"&gt;in&lt;/span&gt; &lt;span style="color: #CC3300"&gt;&amp;#39;󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮&amp;#39;&lt;/span&gt;]
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; [&lt;span style="color: #CC3300"&gt;&amp;#39;0xe014e&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xe0165&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xe0176&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xe0165&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xe0172&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xe0120&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xe0167&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xe016f&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xe016e&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;0xe016e&amp;#39;&lt;/span&gt;]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Actually, since strings in Python 3.x are Unicode, passing one of them to the &lt;code&gt;unicodedata&lt;/code&gt; library works really well for looking up information about these characters: &lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span style="color: #006699; font-weight: bold"&gt;import&lt;/span&gt; &lt;span style="color: #00CCFF; font-weight: bold"&gt;unicodedata&lt;/span&gt;
+[unicodedata&lt;span style="color: #555555"&gt;.&lt;/span&gt;name(l) &lt;span style="color: #006699; font-weight: bold"&gt;for&lt;/span&gt; l &lt;span style="color: #000000; font-weight: bold"&gt;in&lt;/span&gt; &lt;span style="color: #CC3300"&gt;&amp;#39;󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮&amp;#39;&lt;/span&gt;]
+
+&lt;span style="color: #555555"&gt;-&amp;gt;&lt;/span&gt; [&lt;span style="color: #CC3300"&gt;&amp;#39;VARIATION SELECTOR-95&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;VARIATION SELECTOR-118&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;VARIATION SELECTOR-135&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;VARIATION SELECTOR-118&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;VARIATION SELECTOR-131&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;VARIATION SELECTOR-49&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;VARIATION SELECTOR-120&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;VARIATION SELECTOR-128&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;VARIATION SELECTOR-127&amp;#39;&lt;/span&gt;,
+    &lt;span style="color: #CC3300"&gt;&amp;#39;VARIATION SELECTOR-127&amp;#39;&lt;/span&gt;]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Cool! So these are things called variation selectors. &lt;a href="https://en.wikipedia.org/wiki/Variation_Selectors_(Unicode_block)"&gt;Variation selectors&lt;/a&gt; are meant to be used following another character, to modify how the character is displayed - for instance, to modify an emoji or choose to display it as text rather than an image. &lt;a href="https://www.compart.com/en/unicode/U+E014E"&gt;Here's a nice web page&lt;/a&gt; showing all three of the special numbers we've seen so far - the UTF-8, UTF-16, and Unicode code point values - in one place, tied together by the name "VARIATION SELECTOR-95".&lt;/p&gt;
+&lt;h2&gt;Part 2: The funky &lt;code&gt;escape&lt;/code&gt; part&lt;/h2&gt;
+&lt;p&gt;If we keep following the call chain, the first thing done to this UTF-16 byte stream appears to involve a strange construction:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;escape&lt;span style="color: #CC3300"&gt;``&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This is actually pretty simple - it's using a feature of the JavaScript language called "tagged templates." It's worth reading about &lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates"&gt;JavaScript tagged templates on MDN&lt;/a&gt;, but for now we can treat it like the &lt;code&gt;escape&lt;/code&gt; function receives a list containing a single string, the string made of UTF-16 bytes derived from our non-printable UTF-8 bytes.&lt;/p&gt;
+&lt;p&gt;We can put the tagged template part into the browser console, and we get the following result:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;"%uDB40%uDD4E%uDB40%uDD65%uDB40%uDD76%uDB40%uDD65%uDB40%uDD72%uDB40%uDD20%uDB40%uDD67%uDB40%uDD6F%uDB40%uDD6E%uDB40%uDD6E%uDB40%uDD61%uDB40%uDD20%uDB40%uDD72%uDB40%uDD75%uDB40%uDD6E%uDB40%uDD20%uDB40%uDD61%uDB40%uDD72%uDB40%uDD6F%uDB40%uDD75%uDB40%uDD6E%uDB40%uDD64%uDB40%uDD20%uDB40%uDD61%uDB40%uDD6E%uDB40%uDD64%uDB40%uDD20%uDB40%uDD64%uDB40%uDD65%uDB40%uDD73%uDB40%uDD65%uDB40%uDD72%uDB40%uDD74%uDB40%uDD20%uDB40%uDD79%uDB40%uDD6F%uDB40%uDD75"&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Look familiar? That is a big-endian UTF-16 representation of our original UTF-8 byte stream, except that it's percent-encoded in an interesting way. The &lt;code&gt;escape&lt;/code&gt; function is &lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/escape"&gt;deprecated according to MDN&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Part 3: The replace part&lt;/h2&gt;
+&lt;p&gt;Things are pretty simple from here on. &lt;/p&gt;
+&lt;p&gt;Looking at the original,&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;unescape(escape&lt;span style="color: #CC3300"&gt;`󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮󠅡󠄠󠅲󠅵󠅮󠄠󠅡󠅲󠅯󠅵󠅮󠅤󠄠󠅡󠅮󠅤󠄠󠅤󠅥󠅳󠅥󠅲󠅴󠄠󠅹󠅯󠅵`&lt;/span&gt;.replace(&lt;span style="color: #33AAAA"&gt;/u.{8}/g&lt;/span&gt;,&lt;span style="color: #CC3300"&gt;&amp;#39;&amp;#39;&lt;/span&gt;))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;code&gt;replace(/u.{8}/g,'')&lt;/code&gt; is next. All this does is remove each instance of the letter "u" followed by 8 characters.&lt;/p&gt;
+&lt;p&gt;This results in the following:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;"%4E%65%76%65%72%20%67%6F%6E%6E%61%20%72%75%6E%20%61%72%6F%75%6E%64%20%61%6E%64%20%64%65%73%65%72%74%20%79%6F%75"&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;And now, we have simple percent-encoded ASCII.&lt;/p&gt;
+&lt;h2&gt;Part 4: The unescape&lt;/h2&gt;
+&lt;p&gt;And finally, the joke. Unescaping the percent-encoded ASCII results in:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;"Never gonna run around and desert you"&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;Reverse engineering this trick&lt;/h2&gt;
+&lt;p&gt;So, how did someone figure this trick out? I'm unsure exactly, but my guess is that they simply looked for a block of non-printing code-points in Unicode, and then they found some way to convert these to ASCII without being super obvious. The path used here was to find a nice block of non-printing characters whose UTF-16 encodings ended in valid ASCII byte values. One really important thing is that these non-printing characters shouldn't be detected by many programs. It's not uncommon for programs to call out hidden text, like the way VSCode might alert you to a hidden function name. Variation selectors fill the role for that.&lt;/p&gt;
+&lt;h2&gt;A short survey of encoding based threat vectors&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Non-printable characters. See above.&lt;/li&gt;
+&lt;li&gt;Escape schemes. Imagine having form validation that blocks &lt;code&gt;&amp;lt;&lt;/code&gt; characters, but someone submits &lt;code&gt;&amp;amp;lt;&lt;/code&gt; Did we block this? What about &lt;code&gt;&amp;amp;#60;&lt;/code&gt;? If we render these HTML entities into whatever HTML document we're producing, rather than placing the literal escape sequences into the document, then these get turned back into a &lt;code&gt;&amp;lt;&lt;/code&gt;. &lt;a href="https://www.youtube.com/watch?v=Y4A7KMQEmfo"&gt;Escape schemes are not always totally obvious, either, and this has lead to tons of bugs in all kinds of software.&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://n3t-hunt3r.gitbook.io/pentest-book/web-application-pentesting/unicode-normalization-vulnerability"&gt;Unicode Normalization&lt;/a&gt;.  &lt;/li&gt;
+&lt;li&gt;&lt;a href="https://shiflett.org/blog/2005/googles-xss-vulnerability"&gt;Mixing encodings&lt;/a&gt;. &lt;/li&gt;
+&lt;/ul&gt;</content><category term="security"></category><category term="security"></category><category term="learning"></category><category term="python"></category><category term="software development"></category></entry><entry><title>My pentesting tenets</title><link href="https://www.dinogalactic.com/my-pentesting-tenets.html" rel="alternate"></link><published>2024-02-19T06:00:00-05:00</published><updated>2024-02-19T06:00:00-05:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2024-02-19:/my-pentesting-tenets.html</id><summary type="html">&lt;p&gt;I follow a method built on a few tenets. I didn't set out to make this pseudo-buddhist, but it turned out a little bit like that. These are the things that help me so far.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Try the attack. Don't assume, even if it seems impossible or incredibly stupid that an …&lt;/li&gt;&lt;/ol&gt;</summary><content type="html">&lt;p&gt;I follow a method built on a few tenets. I didn't set out to make this pseudo-buddhist, but it turned out a little bit like that. These are the things that help me so far.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Try the attack. Don't assume, even if it seems impossible or incredibly stupid that an attack would work. Remember that the early phone phreakers thought it was impossible that whistling 2600Hz could get them a free phone call.&lt;/li&gt;
+&lt;li&gt;If it isn't written down, it didn't happen. This goes for everything in your life, not just pentesting, but it applies doubly so for pentesting. Attack ideas, attack attempts - everything you thought and tried - needs to be written down. Remember this from Cliff Stoll and The Cuckoo's egg.&lt;/li&gt;
+&lt;li&gt;Magic isn't real. Even if it seems hackers sometimes communicate on a direct spiritual channel with computers and can sense vulnerabilities before touching the keyboard, every fascinating hack is the result of grueling trial and error, and every slick talk at DEFCON hides literally years of trying shit to see if it worked. For every successful attack, there are hundreds of failed attacks.&lt;/li&gt;
+&lt;li&gt;Chop wood; carry water. Give yourself over to the method, accept what it gives back, and ask for nothing more. Getting frustrated, getting ahead of yourself, and daydreaming about how this attack will definitely work and will definitely secure you the ultimate prize are all symptoms of not listening to this tenet.&lt;/li&gt;
+&lt;li&gt;Go step by step. Let your notes guide you to the next step. A knitter creates a beautiful garment out of a single length of wool one stitch at a time. Focus on the next step before you look back and see what you have made, or look forward to what you haven't. Looking forward or backward will make you sad that you haven't done enough.&lt;/li&gt;
+&lt;/ol&gt;</content><category term="security"></category><category term="security"></category></entry><entry><title>How AWS Security Groups and NACLs block TCP ports differently</title><link href="https://www.dinogalactic.com/how-aws-security-groups-and-nacls-block-tcp-ports-differently.html" rel="alternate"></link><published>2024-02-04T06:00:00-05:00</published><updated>2024-02-04T06:00:00-05:00</updated><author><name>Eddie Peters</name></author><id>tag:www.dinogalactic.com,2024-02-04:/how-aws-security-groups-and-nacls-block-tcp-ports-differently.html</id><summary type="html">&lt;p&gt;Several years ago at an AWS training course, the trainer said that EC2 security groups are "stateful," whereas EC2 NACLs (Network Access Control Lists) are not. The consequence was that you could easily set up "outgoing only" connections on a security group by adding an outbound rule, but on a …&lt;/p&gt;</summary><content type="html">&lt;p&gt;Several years ago at an AWS training course, the trainer said that EC2 security groups are "stateful," whereas EC2 NACLs (Network Access Control Lists) are not. The consequence was that you could easily set up "outgoing only" connections on a security group by adding an outbound rule, but on a NACL, you'd have to configure both an outbound and an inbound rule to allow even outbound connections. The NACL had to be configured this way or it wouldn't let the responses come back from whatever network location your system was trying to connect to. But I've never &lt;em&gt;really&lt;/em&gt; known what he meant.&lt;/p&gt;
+&lt;p&gt;In reading the &lt;a href="https://nmap.org/book/determining-firewall-rules.html#fw-rules-SYN"&gt;&lt;code&gt;nmap&lt;/code&gt; Book section on Avoiding Intrusion Detection and Prevention Systems when port scanning&lt;/a&gt;, I found an explanation of &lt;code&gt;nmap&lt;/code&gt;'s &lt;code&gt;ACK&lt;/code&gt; scanning feature that helped me understand what "stateless" really means in the above context. &lt;/p&gt;
+&lt;p&gt;Here's the excerpt from the &lt;code&gt;nmap&lt;/code&gt; book:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Many networks allow nearly unrestricted outbound connections, but wish to block Internet hosts from initiating connections back to them. Blocking incoming &lt;code&gt;SYN&lt;/code&gt; packets (without the &lt;code&gt;ACK&lt;/code&gt; bit set) is an easy way to do this, but it still allows any &lt;code&gt;ACK&lt;/code&gt; packets through. Blocking those &lt;code&gt;ACK&lt;/code&gt; packets is more difficult, because they do not tell which side started the connection. To block unsolicited &lt;code&gt;ACK&lt;/code&gt; packets (as sent by the Nmap &lt;code&gt;ACK&lt;/code&gt; scan), while allowing &lt;code&gt;ACK&lt;/code&gt; packets belonging to legitimate connections, firewalls must statefully watch every established connection to determine whether a given &lt;code&gt;ACK&lt;/code&gt; is appropriate.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Let's do two sets of tests: one focused on NACLs and one focused on Security Groups.&lt;/p&gt;
+&lt;p&gt;In these first tests (focused on the NACL), the EC2 instance has a Security Group, but all traffic is allowed (both inbound and outbound) on that Security Group. I did this because every EC2 instance must have a security group in AWS, and I wanted to focus on only the NACL for now, so the Security Group is just passing traffic through.&lt;/p&gt;
+&lt;h2&gt;NACL (Stateless)&lt;/h2&gt;
+&lt;p&gt;First we'll put the EC2 instance behind a NACL that has all outbound ports allowed but all inbound ports disallowed. We should expect all ports to show as filtered in an &lt;code&gt;nmap&lt;/code&gt; &lt;code&gt;ACK&lt;/code&gt; scan. More important to understand right now is that any outgoing TCP connections, which require packets to be sent back to establish the connection and transfer data, will not work.&lt;/p&gt;
+&lt;p&gt;(Diagrams generated with ChatGPT)&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  Network ACL          &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  Outbound ports:      &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  &lt;span style="color: #FF6600"&gt;0&lt;/span&gt;&lt;span style="color: #555555"&gt;-&lt;/span&gt;&lt;span style="color: #FF6600"&gt;65535&lt;/span&gt;              &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+        &lt;span style="color: #555555"&gt;^&lt;/span&gt;
+        &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+        v
+&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  Subnet               &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;+-------------------+&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt; AWS EC2 Instance  &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;                   &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;   netcat listening&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;   on port &lt;span style="color: #FF6600"&gt;80&lt;/span&gt;      &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;+-------------------+&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;As promised, no TCP connections to network locations outside the instance's local subnet are possible in this configuration:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span style="color: #555555"&gt;[&lt;/span&gt;ec2-user@ip-10-0-12-197 ~&lt;span style="color: #555555"&gt;]&lt;/span&gt;$ nc -w &lt;span style="color: #FF6600"&gt;1&lt;/span&gt; -v google.com &lt;span style="color: #FF6600"&gt;80&lt;/span&gt;
+Ncat: Version &lt;span style="color: #FF6600"&gt;7&lt;/span&gt;.93 &lt;span style="color: #555555"&gt;(&lt;/span&gt; https://nmap.org/ncat &lt;span style="color: #555555"&gt;)&lt;/span&gt;
+Ncat: Connection to &lt;span style="color: #FF6600"&gt;142&lt;/span&gt;.250.31.102 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to &lt;span style="color: #FF6600"&gt;142&lt;/span&gt;.250.31.113 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to &lt;span style="color: #FF6600"&gt;142&lt;/span&gt;.250.31.138 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to &lt;span style="color: #FF6600"&gt;142&lt;/span&gt;.250.31.139 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to &lt;span style="color: #FF6600"&gt;142&lt;/span&gt;.250.31.100 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to &lt;span style="color: #FF6600"&gt;142&lt;/span&gt;.250.31.101 failed: TIMEOUT.
+Ncat: Trying next address...
+Ncat: Connection to &lt;span style="color: #FF6600"&gt;2607&lt;/span&gt;:f8b0:4004:c08::66 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Connection to &lt;span style="color: #FF6600"&gt;2607&lt;/span&gt;:f8b0:4004:c08::71 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Connection to &lt;span style="color: #FF6600"&gt;2607&lt;/span&gt;:f8b0:4004:c08::64 failed: Network is unreachable.
+Ncat: Trying next address...
+Ncat: Network is unreachable.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;In this configuration, &lt;code&gt;nmap&lt;/code&gt; finds that all ports (port 53 notwithstanding) are filtered:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;eddie@pop-os:~$ sudo nmap -T4 -Pn -sA &lt;span style="color: #FF6600"&gt;54&lt;/span&gt;.221.77.100 
+Starting Nmap &lt;span style="color: #FF6600"&gt;7&lt;/span&gt;.80 &lt;span style="color: #555555"&gt;(&lt;/span&gt; https://nmap.org &lt;span style="color: #555555"&gt;)&lt;/span&gt; at &lt;span style="color: #FF6600"&gt;2024&lt;/span&gt;-01-26 &lt;span style="color: #FF6600"&gt;14&lt;/span&gt;:59 EST
+Nmap scan report &lt;span style="color: #006699; font-weight: bold"&gt;for&lt;/span&gt; ec2-54-221-77-100.compute-1.amazonaws.com &lt;span style="color: #555555"&gt;(&lt;/span&gt;&lt;span style="color: #FF6600"&gt;54&lt;/span&gt;.221.77.100&lt;span style="color: #555555"&gt;)&lt;/span&gt;
+Host is up &lt;span style="color: #555555"&gt;(&lt;/span&gt;&lt;span style="color: #FF6600"&gt;0&lt;/span&gt;.0020s latency&lt;span style="color: #555555"&gt;)&lt;/span&gt;.
+Not shown: &lt;span style="color: #FF6600"&gt;999&lt;/span&gt; filtered ports
+PORT   STATE      SERVICE
+&lt;span style="color: #FF6600"&gt;53&lt;/span&gt;/tcp unfiltered domain
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Nmap done: 1 IP address (1 host up) scanned in 4.31 seconds&lt;/p&gt;
+&lt;p&gt;Side note: I'm actually not sure why port 53 is unfiltered here, so I'll try to figure that out separately. Regardless, all other scanned ports are filtered. We could try all 65536 ports, but there's no need at least for our demonstration.&lt;/p&gt;
+&lt;p&gt;Next, we'll add an inbound port range rule to the NACL. This will allow inbound &lt;a href="https://www.ncftp.com/ncftpd/doc/misc/ephemeral_ports.html"&gt;ephemeral ports&lt;/a&gt; 1024-65535, which are also called "local" ports in Linux. These are the ports that could be used for connection back to the EC2 instance from whatever outgoing connections it originates.&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  Network ACL          &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  Inbound ports:       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  &lt;span style="color: #FF6600"&gt;1024&lt;/span&gt;&lt;span style="color: #555555"&gt;-&lt;/span&gt;&lt;span style="color: #FF6600"&gt;65535&lt;/span&gt;          &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  Outbound ports:      &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  &lt;span style="color: #FF6600"&gt;0&lt;/span&gt;&lt;span style="color: #555555"&gt;-&lt;/span&gt;&lt;span style="color: #FF6600"&gt;65535&lt;/span&gt;              &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+        &lt;span style="color: #555555"&gt;^&lt;/span&gt;
+        &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+        v
+&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  Subnet               &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;+-------------------+&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt; AWS EC2 Instance  &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;+-------------------+&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Outbound connections are now possible:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span style="color: #555555"&gt;[&lt;/span&gt;ec2-user@ip-10-0-12-197 ~&lt;span style="color: #555555"&gt;]&lt;/span&gt;$ nc -w &lt;span style="color: #FF6600"&gt;1&lt;/span&gt; -v google.com &lt;span style="color: #FF6600"&gt;80&lt;/span&gt;
+Ncat: Version &lt;span style="color: #FF6600"&gt;7&lt;/span&gt;.93 &lt;span style="color: #555555"&gt;(&lt;/span&gt; https://nmap.org/ncat &lt;span style="color: #555555"&gt;)&lt;/span&gt;
+Ncat: Connected to &lt;span style="color: #FF6600"&gt;142&lt;/span&gt;.250.31.101:80.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;When we perform an &lt;code&gt;nmap&lt;/code&gt; &lt;code&gt;ACK&lt;/code&gt; scan, the scan should show that a &lt;code&gt;RST&lt;/code&gt; response was returned from the EC2 instance.&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;eddie@pop-os:~$ sudo nmap -ddd -T4 -Pn -sA &lt;span style="color: #FF6600"&gt;54&lt;/span&gt;.221.77.100
+...OUTPUT TRUNCATED BY ME...
+&lt;span style="color: #FF6600"&gt;1001&lt;/span&gt;/tcp  filtered   webpush              no-response
+&lt;span style="color: #FF6600"&gt;1002&lt;/span&gt;/tcp  filtered   windows-icfw         no-response
+&lt;span style="color: #FF6600"&gt;1007&lt;/span&gt;/tcp  filtered   unknown              no-response
+&lt;span style="color: #FF6600"&gt;1009&lt;/span&gt;/tcp  filtered   unknown              no-response
+&lt;span style="color: #FF6600"&gt;1010&lt;/span&gt;/tcp  filtered   surf                 no-response
+&lt;span style="color: #FF6600"&gt;1011&lt;/span&gt;/tcp  filtered   unknown              no-response
+&lt;span style="color: #FF6600"&gt;1021&lt;/span&gt;/tcp  filtered   exp1                 no-response
+&lt;span style="color: #FF6600"&gt;1022&lt;/span&gt;/tcp  filtered   exp2                 no-response
+&lt;span style="color: #FF6600"&gt;1023&lt;/span&gt;/tcp  filtered   netvenuechat         no-response
+&lt;span style="color: #FF6600"&gt;1024&lt;/span&gt;/tcp  unfiltered kdm                  reset ttl &lt;span style="color: #FF6600"&gt;115&lt;/span&gt;
+&lt;span style="color: #FF6600"&gt;1025&lt;/span&gt;/tcp  unfiltered NFS-or-IIS           reset ttl &lt;span style="color: #FF6600"&gt;115&lt;/span&gt;
+&lt;span style="color: #FF6600"&gt;1026&lt;/span&gt;/tcp  unfiltered LSA-or-nterm         reset ttl &lt;span style="color: #FF6600"&gt;113&lt;/span&gt;
+&lt;span style="color: #FF6600"&gt;1027&lt;/span&gt;/tcp  unfiltered IIS                  reset ttl &lt;span style="color: #FF6600"&gt;114&lt;/span&gt;
+&lt;span style="color: #FF6600"&gt;1028&lt;/span&gt;/tcp  unfiltered unknown              reset ttl &lt;span style="color: #FF6600"&gt;113&lt;/span&gt;
+&lt;span style="color: #FF6600"&gt;1029&lt;/span&gt;/tcp  unfiltered ms-lsa               reset ttl &lt;span style="color: #FF6600"&gt;115&lt;/span&gt;
+&lt;span style="color: #FF6600"&gt;1030&lt;/span&gt;/tcp  unfiltered iad1                 reset ttl &lt;span style="color: #FF6600"&gt;114&lt;/span&gt;
+&lt;span style="color: #FF6600"&gt;1031&lt;/span&gt;/tcp  unfiltered iad2                 reset ttl &lt;span style="color: #FF6600"&gt;113&lt;/span&gt;
+&lt;span style="color: #FF6600"&gt;1032&lt;/span&gt;/tcp  unfiltered iad3                 reset ttl &lt;span style="color: #FF6600"&gt;115&lt;/span&gt;
+...OUTPUT TRUNCATED BY ME...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;What happened here?&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;nmap&lt;/code&gt; scan I performed sent &lt;code&gt;ACK&lt;/code&gt; packets to the top 1000 most interesting ports (as defined by &lt;code&gt;nmap&lt;/code&gt;), just like in the previous scan, but during this scan, some ports showed as "unfiltered" rather than "filtered."&lt;/p&gt;
+&lt;p&gt;Notice that the return status switched from &lt;code&gt;filtered&lt;/code&gt; to &lt;code&gt;unfiltered&lt;/code&gt; immediately when we started scanning port 1024. This is not an accident - our firewall (NACL) has ports &lt;code&gt;1024-65535&lt;/code&gt; allowed for inbound connections. This doesn't tell us that those ports are &lt;em&gt;open&lt;/em&gt; in &lt;code&gt;nmap&lt;/code&gt; terms - there may be (in this case there is not) something listening on those ports on the target host, but all we can tell from this that the Firewall allowed the &lt;code&gt;ACK&lt;/code&gt; packet to reach the EC2 instance, and the instance returned a &lt;code&gt;RST&lt;/code&gt; packet.&lt;/p&gt;
+&lt;p&gt;For more information about &lt;code&gt;nmap&lt;/code&gt;'s definitions of open, closed, filtered, unfiltered, etc., see the &lt;a href="https://nmap.org/book/man-port-scanning-basics.html"&gt;nmap docs&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Security Group (Stateful)&lt;/h2&gt;
+&lt;p&gt;Now, if we allow all inbound and outbound ports on the NACL so that all our traffic is handled by the Security Group attached to the EC2 instance, we can shift our test to the Security Group. We'll allow all outbound ports on the Security Group, but we won't allow any inbound ports.&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  Network ACL          &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  All inbound &lt;span style="color: #000000; font-weight: bold"&gt;and&lt;/span&gt;      &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  outbound traffic     &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  allowed              &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+        &lt;span style="color: #555555"&gt;^&lt;/span&gt;
+        &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+        v
+&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;  Subnet               &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;+-------------------+&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt; Security Group    &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;                   &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt; Inbound ports:    &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt; None allowed      &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt; Outbound ports:   &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #FF6600"&gt;0&lt;/span&gt;&lt;span style="color: #555555"&gt;-&lt;/span&gt;&lt;span style="color: #FF6600"&gt;65535&lt;/span&gt;           &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;+-------------------+&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt; AWS EC2 Instance  &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;                   &lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt; &lt;span style="color: #555555"&gt;+-------------------+&lt;/span&gt; &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;|&lt;/span&gt;                       &lt;span style="color: #555555"&gt;|&lt;/span&gt;
+&lt;span style="color: #555555"&gt;+-----------------------+&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;When we &lt;code&gt;ACK&lt;/code&gt; scan the host this time, we see that all the ports are filtered:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;eddie@pop-os:~$ sudo nmap -T4 -Pn -sA &lt;span style="color: #FF6600"&gt;54&lt;/span&gt;.221.77.100 
+&lt;span style="color: #555555"&gt;[&lt;/span&gt;sudo&lt;span style="color: #555555"&gt;]&lt;/span&gt; password &lt;span style="color: #006699; font-weight: bold"&gt;for&lt;/span&gt; eddie: 
+Starting Nmap &lt;span style="color: #FF6600"&gt;7&lt;/span&gt;.80 &lt;span style="color: #555555"&gt;(&lt;/span&gt; https://nmap.org &lt;span style="color: #555555"&gt;)&lt;/span&gt; at &lt;span style="color: #FF6600"&gt;2024&lt;/span&gt;-01-26 &lt;span style="color: #FF6600"&gt;15&lt;/span&gt;:32 EST
+Nmap scan report &lt;span style="color: #006699; font-weight: bold"&gt;for&lt;/span&gt; ec2-54-221-77-100.compute-1.amazonaws.com &lt;span style="color: #555555"&gt;(&lt;/span&gt;&lt;span style="color: #FF6600"&gt;54&lt;/span&gt;.221.77.100&lt;span style="color: #555555"&gt;)&lt;/span&gt;
+Host is up &lt;span style="color: #555555"&gt;(&lt;/span&gt;&lt;span style="color: #FF6600"&gt;0&lt;/span&gt;.00064s latency&lt;span style="color: #555555"&gt;)&lt;/span&gt;.
+Not shown: &lt;span style="color: #FF6600"&gt;999&lt;/span&gt; filtered ports
+PORT   STATE      SERVICE
+&lt;span style="color: #FF6600"&gt;53&lt;/span&gt;/tcp unfiltered domain
+
+Nmap &lt;span style="color: #006699; font-weight: bold"&gt;done&lt;/span&gt;: &lt;span style="color: #FF6600"&gt;1&lt;/span&gt; IP address &lt;span style="color: #555555"&gt;(&lt;/span&gt;&lt;span style="color: #FF6600"&gt;1&lt;/span&gt; host up&lt;span style="color: #555555"&gt;)&lt;/span&gt; scanned in &lt;span style="color: #FF6600"&gt;6&lt;/span&gt;.30 seconds
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;And yet, outbound connections from the host still work:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span style="color: #555555"&gt;[&lt;/span&gt;ec2-user@ip-10-0-12-197 ~&lt;span style="color: #555555"&gt;]&lt;/span&gt;$ nc -w &lt;span style="color: #FF6600"&gt;1&lt;/span&gt; -v google.com &lt;span style="color: #FF6600"&gt;80&lt;/span&gt;
+Ncat: Version &lt;span style="color: #FF6600"&gt;7&lt;/span&gt;.93 &lt;span style="color: #555555"&gt;(&lt;/span&gt; https://nmap.org/ncat &lt;span style="color: #555555"&gt;)&lt;/span&gt;
+Ncat: Connected to &lt;span style="color: #FF6600"&gt;142&lt;/span&gt;.250.31.101:80.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Curling google.com:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f0f3f3"&gt;&lt;pre style="line-height: 125%"&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;[ec2-user@ip-10-0-12-197 ~]$ curl google.com
+&amp;lt;&lt;span style="color: #330099; font-weight: bold"&gt;HTML&lt;/span&gt;&amp;gt;&amp;lt;&lt;span style="color: #330099; font-weight: bold"&gt;HEAD&lt;/span&gt;&amp;gt;&amp;lt;&lt;span style="color: #330099; font-weight: bold"&gt;meta&lt;/span&gt; &lt;span style="color: #330099"&gt;http-equiv&lt;/span&gt;&lt;span style="color: #555555"&gt;=&lt;/span&gt;&lt;span style="color: #CC3300"&gt;&amp;quot;content-type&amp;quot;&lt;/span&gt; &lt;span style="color: #330099"&gt;content&lt;/span&gt;&lt;span style="color: #555555"&gt;=&lt;/span&gt;&lt;span style="color: #CC3300"&gt;&amp;quot;text/html;charset=utf-8&amp;quot;&lt;/span&gt;&amp;gt;
+&amp;lt;&lt;span style="color: #330099; font-weight: bold"&gt;TITLE&lt;/span&gt;&amp;gt;301 Moved&amp;lt;/&lt;span style="color: #330099; font-weight: bold"&gt;TITLE&lt;/span&gt;&amp;gt;&amp;lt;/&lt;span style="color: #330099; font-weight: bold"&gt;HEAD&lt;/span&gt;&amp;gt;&amp;lt;&lt;span style="color: #330099; font-weight: bold"&gt;BODY&lt;/span&gt;&amp;gt;
+&amp;lt;&lt;span style="color: #330099; font-weight: bold"&gt;H1&lt;/span&gt;&amp;gt;301 Moved&amp;lt;/&lt;span style="color: #330099; font-weight: bold"&gt;H1&lt;/span&gt;&amp;gt;
+The document has moved
+&amp;lt;&lt;span style="color: #330099; font-weight: bold"&gt;A&lt;/span&gt; &lt;span style="color: #330099"&gt;HREF&lt;/span&gt;&lt;span style="color: #555555"&gt;=&lt;/span&gt;&lt;span style="color: #CC3300"&gt;&amp;quot;http://www.google.com/&amp;quot;&lt;/span&gt;&amp;gt;here&amp;lt;/&lt;span style="color: #330099; font-weight: bold"&gt;A&lt;/span&gt;&amp;gt;.
+&amp;lt;/&lt;span style="color: #330099; font-weight: bold"&gt;BODY&lt;/span&gt;&amp;gt;&amp;lt;/&lt;span style="color: #330099; font-weight: bold"&gt;HTML&lt;/span&gt;&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</content><category term="security"></category><category term="security"></category><category term="aws"></category></entry></feed>

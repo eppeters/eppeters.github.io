@@ -193,6 +193,7 @@ aside {
 @media (min-width: 65rem) {
   main {
     float: left;
+    width: 100%
   }
   aside,
   nav {
@@ -241,4 +242,8 @@ aside {
 /* Special support for footnotes from Pandoc */
 div.footnotes {
   font-size: 0.75rem;
+}
+
+.codehilite pre {
+  text-align: left;
 }

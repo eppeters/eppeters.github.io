@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>dinogalactic — Reverse engineering an obfuscated JavaScript rickroll</title>
+<!-- Primary Meta Tags -->
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="./theme/css/typesetter.css" rel="stylesheet"/>
+<link href="./theme/css/typesetter-extensions.css" rel="stylesheet"/>
+<link href="https://www.dinogalactic.com/feeds/all.atom.xml" rel="alternate" title="dinogalactic Full Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/feeds/security.atom.xml" rel="alternate" title="dinogalactic Categories Atom Feed" type="application/atom+xml"/>
+<link href="https://www.dinogalactic.com/reverse-engineering-an-obfuscated-javascript-rickroll.html" rel="canonical"/><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "dinogalactic", "item": "https://www.dinogalactic.com"}, {"@type": "ListItem", "position": 2, "name": "Reverse engineering an obfuscated javascript rickroll", "item": "https://www.dinogalactic.com/reverse-engineering-an-obfuscated-javascript-rickroll.html"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "author": {"@type": "Person", "name": "Eddie Peters"}, "publisher": {"@type": "Organization", "name": "dinogalactic"}, "headline": "Reverse engineering an obfuscated JavaScript rickroll", "about": "security", "datePublished": "2025-02-28 14:00"}</script><meta content="summary" name="twitter:card"/><meta content="https://www.dinogalactic.com/reverse-engineering-an-obfuscated-javascript-rickroll.html" property="og:url"/><meta content="article" property="og:type"/><meta content="Reverse engineering an obfuscated JavaScript rickroll" property="og:title"/><meta content="How JavaScript (JS) can be obfuscated, what encodings are, how Unicode and UTF-8, UTF-16, etc. work, and the origins of security." property="og:description"/><meta content="en_US" property="og:locale"/></head>
+<body>
+<header><a alt="dinogalactic" href="./">dinogalactic</a></header>
+<nav>
+<h1>Navigation</h1>
+<ul>
+<li><a href="./pages/about.html">about</a></li>
+<li><a href="./pages/booksread.html">books</a></li>
+<li><a href="./category/aws.html">AWS</a></li>
+<li><a href="./category/misc.html">misc</a></li>
+<li><a href="./category/security.html">security</a></li>
+<li><a href="./category/xonshiousness.html">xonshiousness</a></li>
+</ul>
+</nav>
+<main>
+<h1>Reverse engineering an obfuscated JavaScript rickroll</h1>
+<p>Or: What encodings are and how browsers work, and the origins of security and how we live in the world without screaming most of the time.</p>
+<p>In which I get obsessed with understanding a silly little piece of code I found.</p>
+<h2>Intro</h2>
+<p>I found <a href="https://h.43z.one/">this guy's website</a> where, among other cute things, he included the following bit of JavaScript:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>unescape(escape<span style="color: #CC3300">`󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮󠅡󠄠󠅲󠅵󠅮󠄠󠅡󠅲󠅯󠅵󠅮󠅤󠄠󠅡󠅮󠅤󠄠󠅤󠅥󠅳󠅥󠅲󠅴󠄠󠅹󠅯󠅵`</span>.replace(<span style="color: #33AAAA">/u.{8}/g</span>,<span style="color: #CC3300">''</span>))
+</code></pre></div>
+<p>I, of course, copied it and ran it in the browser console. The result was the following string:</p>
+<p><code>"Never gonna run around and desert you"</code></p>
+<p>How does this work? I did some preliminary investigation and found that it's ultimately a bunch of non-printable characters, escaped, and then that escaped value has <code>replace()</code> run on it, and then the percent-encoded-ASCII result is unescaped into the final string.</p>
+<p>Here's the canonical hex-dump of the input:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>🐔＄ echo "unescape(escape`󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮`.replace(/u.{8}/g,''))" | hexdump -C                                                                                                                  at 10:21:32
+00000000  75 6e 65 73 63 61 70 65  28 65 73 63 61 70 65 60  |unescape(escape`|
+00000010  f3 a0 85 8e f3 a0 85 a5  f3 a0 85 b6 f3 a0 85 a5  |................|
+00000020  f3 a0 85 b2 f3 a0 84 a0  f3 a0 85 a7 f3 a0 85 af  |................|
+00000030  f3 a0 85 ae f3 a0 85 ae  f3 a0 85 a1 f3 a0 84 a0  |................|
+00000040  f3 a0 85 b2 f3 a0 85 b5  f3 a0 85 ae f3 a0 84 a0  |................|
+00000050  f3 a0 85 a1 f3 a0 85 b2  f3 a0 85 af f3 a0 85 b5  |................|
+00000060  f3 a0 85 ae f3 a0 85 a4  f3 a0 84 a0 f3 a0 85 a1  |................|
+00000070  f3 a0 85 ae f3 a0 85 a4  f3 a0 84 a0 f3 a0 85 a4  |................|
+00000080  f3 a0 85 a5 f3 a0 85 b3  f3 a0 85 a5 f3 a0 85 b2  |................|
+00000090  f3 a0 85 b4 f3 a0 84 a0  f3 a0 85 b9 f3 a0 85 af  |................|
+000000a0  f3 a0 85 b5 60 2e 72 65  70 6c 61 63 65 28 2f 75  |....`.replace(/u|
+000000b0  2e 7b 38 7d 2f 67 2c 27  27 29 29 0a              |.{8}/g,'')).|
+000000bc
+</code></pre></div>
+<p>Just how does someone go from an ASCII string like <code>Never gonna run around and desert you</code> (sic) to that obfuscated JavaScript? Let's find out!</p>
+<h2>The parts</h2>
+<p>Let's examine the input, the obfuscated JavaScript. A few parts of it catch my attention:</p>
+<ol>
+<li>There are non-printing characters between the backticks.</li>
+<li>The JS <code>escape</code> function, if that even is a function, is seemingly called without parentheses.</li>
+<li>The <code>replace()</code> call effectively removes a literal <code>u</code> character followed by 8 of any matching character.</li>
+<li>The final value is run through JS's <code>unescape()</code>.</li>
+</ol>
+<p>We can take these as parts, in order. The <code>unescape(escape</code>󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮<code>.replace(/u.{8}/g,''))</code> is in infix notation, so the innermost part should be understood first, and then we'll take each layer outside of it. So, if this were an onion, the invisible text would be in the middle, and that's where we would start. The <code>unescape</code> call would be the outside of the onion, which we will look at last.</p>
+<h2>Part 1: The invisible part</h2>
+<p>A function, in a general sense not specific to programming, takes input and produces an output through some steps. Here we have the function (again, not strictly in the programming sense) that takes the invisible input between the backticks and outputs <code>"Never gonna run around and desert you"</code>. The escape, replace, and unescape are really just helpful hints at the steps that are used. Presumably many different inputs could be placed in between the backticks.</p>
+<p>If a function takes steps and produces an output, maybe the input could be reproduced by following the steps in reverse order. So I could start with the human-readable string and wind up with the obfuscated string, presumably.</p>
+<p>It might help to know more about the invisible input than the fact that it is invisible. Let's make some observations:</p>
+<p>As shown above in the <code>hexdump -C</code> output, the individual bytes are <code>f3</code>, <code>a0</code>, <code>85</code>, and various other values like <code>8e</code>. What are these values in decimal?</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #336666">int</span>(<span style="color: #CC3300">'0xf3'</span>, base<span style="color: #555555">=</span><span style="color: #FF6600">16</span>)
+
+<span style="color: #555555">-&gt;</span> <span style="color: #FF6600">243</span>
+
+<span style="color: #336666">int</span>(<span style="color: #CC3300">'0xa0'</span>, base<span style="color: #555555">=</span><span style="color: #FF6600">16</span>)
+
+<span style="color: #555555">-&gt;</span> <span style="color: #FF6600">160</span>
+
+<span style="color: #336666">int</span>(<span style="color: #CC3300">'0x85'</span>, base<span style="color: #555555">=</span><span style="color: #FF6600">16</span>)
+
+<span style="color: #555555">-&gt;</span> <span style="color: #FF6600">133</span>
+
+<span style="color: #336666">int</span>(<span style="color: #CC3300">'0x8e'</span>, base<span style="color: #555555">=</span><span style="color: #FF6600">16</span>)
+
+<span style="color: #555555">-&gt;</span> <span style="color: #FF6600">142</span>
+
+<span style="color: #336666">bin</span>(<span style="color: #FF6600">243</span>)
+
+<span style="color: #555555">-&gt;</span> <span style="color: #CC3300">'0b11110011'</span>
+</code></pre></div>
+<p>So the first byte is <code>0xf3</code>, which in decimal is <code>243</code>. What encoding could this be using? One guess is <code>UTF-16</code>, since <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String#utf-16_characters_unicode_code_points_and_grapheme_clusters">JavaScript uses <code>UTF-16</code> for strings</a>.</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #336666">int</span>(<span style="color: #CC3300">'0xf3a0858ef3a085a5'</span>, base<span style="color: #555555">=</span><span style="color: #FF6600">16</span>)<span style="color: #555555">.</span>to_bytes(<span style="color: #FF6600">8</span>, <span style="color: #CC3300">'big'</span>)<span style="color: #555555">.</span>decode(<span style="color: #CC3300">'utf-16'</span>)
+
+<span style="color: #555555">-&gt;</span> <span style="color: #CC3300">'ꃳ躅ꃳꖅ'</span>
+</code></pre></div>
+<p>So when decoding 8 of these raw bytes through Python's UTF-16 codec, we see two valid, visible characters, so the invisible characters cannot be encoded in UTF-16.</p>
+<h2>An aside: What is an encoding?</h2>
+<p>Fundamentally, an encoding is a way of representing one set of things in another set of things by translating each item in the first bucket into an item in the second bucket. The two buckets of things could be anything. In character encodings, one bucket contains little squiggles (e.g. the letter "A" or the character "ꃳꖅ") and their bastard friends (looking at you, line-feed and carriage return), and the other bucket contains numbers. One way of organizing these buckets is to make long, ordered lists of the items, or maybe even tables. So we'd order some items earlier in the list and others later. The benefit of organizing them at all is that we can then create equivalences between items in the two buckets, e.g. we can say "this squiggle is encoded as the number 65," and the mechanism of this equivalence would be sameness of position, i.e. the item in one list is equivalent to the item in the other list if they are in the same position relative to the start of their respective lists. One of the longest, and most computing friendly, lists we know of is the set of integer numbers, so we use that to organize the numeric bucket in character encodings, and we also use it to index the list of squiggles. Indexing means creating a way to refer to an item's position in the list (position 0, 1, 2, etc.). One nice property of integers is that they can be sorted - each one is clearly less or more than any other. The squiggle bucket is tougher to deal with than the number bucket because it consists of squiggles (and a select group of goofy non-printable fuck-offs), which each have no obvious quantity. It's not clear which of "A" and "ꃳꖅ" is larger (should occur later in the list), so if someone asked us, it would not be obvious which should be given the number <code>4087383461</code> and which should get the number <code>65</code>. We humans have conventions for the comparison of letters, like the ABCs, which put things in a commonly understood <a href="https://en.wikipedia.org/wiki/Alphabetical_order">"alphabetical" order</a>.</p>
+<p>The Unicode Standard is a way of ordering all the squiggles humans use in written communication. In short, it assigns a number to each of these symbols. UTF-8, UTF-16, and UTF-32 are encodings that map each of these Unicode numbers (called <a href="https://infra.spec.whatwg.org/#code-points">"Unicode code points"</a> to binary numbers. Each of these 3 encoding schemes encodes Unicode code points differently. For an example of different ways a single character can be encoded, check out the different ways of encoding <a href="https://unicodeplus.com/U+1F95A">an egg emoji</a>. Side note: in Python, you can use the hex code point identifier to specify a Unicode character using only ASCII characters, but if your codepoint is greater than 16 bits long (like 0x1595a), then you've got to use a 32-bit identified, left-padding with 0s, and an uppercase U for the escape, to let Python know a 32-bit code point identifier follows.</p>
+<p>Another plain language explanation of Unicode and other text encodings can be found in <a href="https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/">Joel on Software's often-referenced piece "The Absolute Minimum Every Software Developer Absolutely, Positively Must Know About Unicode and Character Sets (No Excuses!)"</a>.</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #CC3300">"</span><span style="color: #CC3300; font-weight: bold">\U0001f95a</span><span style="color: #CC3300">"</span>
+
+<span style="color: #555555">-&gt;</span> <span style="color: #CC3300">'🥚'</span>
+</code></pre></div>
+<p>For more on how Python models strings internally, and how to specify different strings, check out <a href="https://docs.python.org/3/howto/unicode.html">Python's Unicode HOWTO</a>. These docs include lots of Python examples and some good tips and references about Unicode in general.</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>egg_unicode <span style="color: #555555">=</span> <span style="color: #CC3300">"</span><span style="color: #CC3300; font-weight: bold">\U0001f95a</span><span style="color: #CC3300">"</span>
+egg_unicode<span style="color: #555555">.</span>encode(<span style="color: #CC3300">'utf-8'</span>)
+
+<span style="color: #555555">-&gt;</span> <span style="color: #CC3300">b'</span><span style="color: #CC3300; font-weight: bold">\xf0\x9f\xa5\x9a</span><span style="color: #CC3300">'</span>
+
+egg_unicode<span style="color: #555555">.</span>encode(<span style="color: #CC3300">'utf-16'</span>)
+
+<span style="color: #555555">-&gt;</span> <span style="color: #CC3300">b'</span><span style="color: #CC3300; font-weight: bold">\xff\xfe</span><span style="color: #CC3300">&gt;</span><span style="color: #CC3300; font-weight: bold">\xd8</span><span style="color: #CC3300">Z</span><span style="color: #CC3300; font-weight: bold">\xdd</span><span style="color: #CC3300">'</span>
+</code></pre></div>
+<p><strong>Side note</strong>: Python prints the ASCII char for a byte string representation [if the byte is in the range of printable ASCII chars](https://stackoverflow.com/questions/72392298/what-are-these-symbols-in-bytes-type]. So, for the above, the egg is really represented in 6 bytes in UTF-16.</p>
+<h2>Part 1: The invisible part, continued</h2>
+<p>We last learned that the invisible characters of the obfuscated code cannot be encoded as UTF-16, since the raw bytes of those invisible characters did not decode as UTF-16.</p>
+<p>Let's think through this. The characters showing up in our browser are in fact not showing up. Why? Because they are non-printable. What does non-printable mean? Non-printable means a human cannot see them. Why can't a human see them? Why didn't our computer show us something for these characters? It means that, the web client (the browser) that got the web page's data from the server decided to tell whatever display software my computer was using NOT to print anything for those characters. Ultimately, my display driver and monitor did not display anything for those characters.</p>
+<p>Obviously, if the web client had interpreted the data from the server as UTF-16 encoded data, it would have instructed the display software stack to display something instead of nothing, since we saw that a UTF-16 decoding of that same string produced visible characters. So in order to understand what encoding the invisible characters are in, we need to figure out how the browser decided to decode the web page data in a given encoding.</p>
+<h2>Spoiler: The invisible stuff is UTF-8 encoded</h2>
+<p>Let's banish the suspense. Many readers probably already know that the non-printable characters are non-printable because the bytes in the web page document were interpreted as UTF-8 encoded text, and those bytes refer to non-printable Unicode code points, so whatever display software is involved displayed nothing in their place.</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #336666">int</span>(<span style="color: #CC3300">'0xf3a0858ef3a085a5'</span>, base<span style="color: #555555">=</span><span style="color: #FF6600">16</span>)<span style="color: #555555">.</span>to_bytes(<span style="color: #FF6600">8</span>, <span style="color: #CC3300">'big'</span>)<span style="color: #555555">.</span>decode(<span style="color: #CC3300">'utf-8'</span>)
+
+<span style="color: #555555">-&gt;</span> <span style="color: #CC3300">'󠅎󠅥'</span>
+</code></pre></div>
+<h2>Part 1: The invisible part, continued again</h2>
+<p>But, it's interesting to go through how we know that the browser displays UTF-8. It's a good guess - UTF-8 is now everywhere, and it's a pretty good guess that HTML documents these days are usually encoded as UTF-8, and browsers decode them as UTF-8 by default. I think someone told me that as well one time.</p>
+<p>But how do we know that a web page is in UTF-8, rather than some other encoding? Is it possible to send documents back to the browser that are not in UTF-8?</p>
+<p>This kind of gets at what a marvel a web browser is; no, it doesn't just get at what a marvel a web browser is - it gets at what a marvel being a human, being alive in this world, and somehow functioning - that is, doing things through time - is. Most of us think of a web browser as something that displays images, text, maybe even <em>experiences</em> to us. That's how we get through life. If we constantly held a web browser as a thing that squirts binary numbers as electrical pulses across a bunch of copper wires and then receives electrical pulses and turns them back into binary numbers that ultimately result in a cathode ray tube shooting some electrons at some phosphorescent surface.... (no one uses CRT monitors anymore, but I don't really know how our modern monitors work - maybe some liquid crystals are activated or something)... If we always thought of a browser that way, we'd be under constant mental strain while <em>using</em> one. Some people think of browsers this way, or else we wouldn't have browsers at all, because that's how people have to think to build them. But for most of us, and all of us at least some of the time, it's easier to ignore all that detail, which is both how we live without screaming and also exactly the origin of security - we ignore detail, and thus potentially different, important ways of interpreting things, in order to get on with things.</p>
+<p>So, if we look at a web browser through this more detailed, but no more accurate description, we see some software that interprets bytes from the wire. When receiving some stream of bytes from the computer's operating system, the browser must have some way to know what encoding the data is in, so it can turn the bytes into something meaningful to humans by telling the computer's display software what to display.</p>
+<h2>An aside: How does a browser determine the encoding of the bytes it receives?</h2>
+<p>It depends. It especially depends on what type of file the browser thinks it is receiving because some algorithm has to be used to detect a document's encoding, and that algorithm may differ depending on the type of file being received. Let's stick to HTML here for simplicity. In the case of HTML, the algorithm browsers should use to detect content type is pretty well defined. Also, newer HTML documents <a href="https://html.spec.whatwg.org/multipage/semantics.html#charset:encoding">will likely use UTF-8</a> due to WHATWG's standard for Encodings. That doesn't mean browsers assume things are UTF-8, though. When dealing with older HTML documents, various encodings can be used, and anyone can still create documents with any encoding, though some <a href="">encodings like UTF-7 are prohibited by modern browsers</a> due to <a href="https://shiflett.org/blog/2005/googles-xss-vulnerability">historical security issues</a>. A fun thing is that UTF-16 is still acknowledged to present significant security issues, but UTF-16 is too big to fail.</p>
+<p>In short, as best I can tell, a browser probably considers the following sources of encoding in priority order from highest to lowest:</p>
+<ol>
+<li>The Content-Encoding header in an HTTP response. This doesn't require looking at the content of the document, but it may differ from the encoding of the actual document. WHATWG has created a <a href="https://mimesniff.spec.whatwg.org/#mime-type-sniffing-algorithm">MIME sniffing algorithm</a> to give a standard way of figuring out the MIME type.</li>
+<li>The <a href="https://en.wikipedia.org/wiki/Byte_order_mark">Byte Order Mark (BOM)</a>, if present.</li>
+<li>Metadata present in a <a href="https://html.spec.whatwg.org/multipage/urls-and-fetching.html#extracting-character-encodings-from-meta-elements"><code>meta</code> element within the document</a>.</li>
+</ol>
+<p>This short explanation is all based on standards. In reality, what matters is what browsers do. I'm sure there are some strange bugs out there involving older encodings. </p>
+<h2>Part 1: The invisible part, wrapped up</h2>
+<p>In the case of the <a href="https://h.43z.one/">page I originally found that bit of obfuscated code on</a>, the charset is specified in the <code>head</code> element of the HTML, inside a <code>meta</code> tag: <code>&lt;meta charset="UTF-8"&gt;</code>.</p>
+<p>So, the trick must work by using non-printable code-points, encoded in UTF-8. When these are entered, by copying and pasting or whatever, as the contents of a JavaScript string, they will be converted to UTF-16 bytes, since <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String#utf-16_characters_unicode_code_points_and_grapheme_clusters">that's how JavaScript stores strings</a>. JavaScript's interpreter, or some component of the browser that interacts with the interpreter, probably decodes the UTF-8 bytes to Unicode values, then encodes the same values as UTF-16 in the interpreter's memory. So let's pretend our invisible byte string is now stored inside the interpeter, decoded to Unicode and then encoded to UTF-16.</p>
+<p>Below is a preview of the hex bytes we should see if we are able to print the byte content of the JavaScript string:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>[<span style="color: #336666">hex</span>(b) <span style="color: #006699; font-weight: bold">for</span> b <span style="color: #000000; font-weight: bold">in</span> <span style="color: #CC3300">'󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮'</span><span style="color: #555555">.</span>encode(<span style="color: #CC3300">'utf-16be'</span>)][:<span style="color: #FF6600">10</span>]
+
+<span style="color: #555555">-&gt;</span> [<span style="color: #CC3300">'0xdb'</span>,
+    <span style="color: #CC3300">'0x40'</span>,
+    <span style="color: #CC3300">'0xdd'</span>,
+    <span style="color: #CC3300">'0x4e'</span>,
+    <span style="color: #CC3300">'0xdb'</span>,
+    <span style="color: #CC3300">'0x40'</span>,
+    <span style="color: #CC3300">'0xdd'</span>,
+    <span style="color: #CC3300">'0x65'</span>,
+    <span style="color: #CC3300">'0xdb'</span>,
+    <span style="color: #CC3300">'0x40'</span>]
+</code></pre></div>
+<p>Note that I used <code>utf-16be</code> as the encoding. UTF-16 cares about byte order (UTF-8 does not). If we use <code>utf-16</code>, it defaults to little endian (this might be due to my own CPU architecture, but I'm not sure). <code>utf-16</code> or <code>utf-16le</code> produces different values, of course:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>[hex(b) <span style="color: #006699; font-weight: bold">for</span> b <span style="color: #006699; font-weight: bold">in</span> <span style="color: #CC3300">'󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮'</span>.encode(<span style="color: #CC3300">'utf-16le'</span>)][:<span style="color: #FF6600">10</span>] <span style="color: #555555">#</span> little endian (<span style="color: #006699; font-weight: bold">not</span> actually used <span style="color: #006699; font-weight: bold">by</span> JS, <span style="color: #006699; font-weight: bold">on</span> my <span style="color: #006699; font-weight: bold">system</span> <span style="color: #006699; font-weight: bold">at</span> least)
+
+<span style="color: #555555">-&gt;</span> [<span style="color: #CC3300">'0x40'</span>,
+    <span style="color: #CC3300">'0xdb'</span>,
+    <span style="color: #CC3300">'0x4e'</span>,
+    <span style="color: #CC3300">'0xdd'</span>,
+    <span style="color: #CC3300">'0x40'</span>,
+    <span style="color: #CC3300">'0xdb'</span>,
+    <span style="color: #CC3300">'0x65'</span>,
+    <span style="color: #CC3300">'0xdd'</span>,
+    <span style="color: #CC3300">'0x40'</span>,
+    <span style="color: #CC3300">'0xdb'</span>]
+</code></pre></div>
+<p>Disregard the above. We only care about big-endian UTF-16, as we will see.</p>
+<p>At this point, you may be wondering what kinds of non-printable characters are being used. To find out, we can look up the non-printing Unicode code points. To get those we can do this:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>[<span style="color: #336666">hex</span>(<span style="color: #336666">ord</span>(l)) <span style="color: #006699; font-weight: bold">for</span> l <span style="color: #000000; font-weight: bold">in</span> <span style="color: #CC3300">'󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮'</span>]
+
+<span style="color: #555555">-&gt;</span> [<span style="color: #CC3300">'0xe014e'</span>,
+    <span style="color: #CC3300">'0xe0165'</span>,
+    <span style="color: #CC3300">'0xe0176'</span>,
+    <span style="color: #CC3300">'0xe0165'</span>,
+    <span style="color: #CC3300">'0xe0172'</span>,
+    <span style="color: #CC3300">'0xe0120'</span>,
+    <span style="color: #CC3300">'0xe0167'</span>,
+    <span style="color: #CC3300">'0xe016f'</span>,
+    <span style="color: #CC3300">'0xe016e'</span>,
+    <span style="color: #CC3300">'0xe016e'</span>]
+</code></pre></div>
+<p>Actually, since strings in Python 3.x are Unicode, passing one of them to the <code>unicodedata</code> library works really well for looking up information about these characters: </p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code><span style="color: #006699; font-weight: bold">import</span> <span style="color: #00CCFF; font-weight: bold">unicodedata</span>
+[unicodedata<span style="color: #555555">.</span>name(l) <span style="color: #006699; font-weight: bold">for</span> l <span style="color: #000000; font-weight: bold">in</span> <span style="color: #CC3300">'󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮'</span>]
+
+<span style="color: #555555">-&gt;</span> [<span style="color: #CC3300">'VARIATION SELECTOR-95'</span>,
+    <span style="color: #CC3300">'VARIATION SELECTOR-118'</span>,
+    <span style="color: #CC3300">'VARIATION SELECTOR-135'</span>,
+    <span style="color: #CC3300">'VARIATION SELECTOR-118'</span>,
+    <span style="color: #CC3300">'VARIATION SELECTOR-131'</span>,
+    <span style="color: #CC3300">'VARIATION SELECTOR-49'</span>,
+    <span style="color: #CC3300">'VARIATION SELECTOR-120'</span>,
+    <span style="color: #CC3300">'VARIATION SELECTOR-128'</span>,
+    <span style="color: #CC3300">'VARIATION SELECTOR-127'</span>,
+    <span style="color: #CC3300">'VARIATION SELECTOR-127'</span>]
+</code></pre></div>
+<p>Cool! So these are things called variation selectors. <a href="https://en.wikipedia.org/wiki/Variation_Selectors_(Unicode_block)">Variation selectors</a> are meant to be used following another character, to modify how the character is displayed - for instance, to modify an emoji or choose to display it as text rather than an image. <a href="https://www.compart.com/en/unicode/U+E014E">Here's a nice web page</a> showing all three of the special numbers we've seen so far - the UTF-8, UTF-16, and Unicode code point values - in one place, tied together by the name "VARIATION SELECTOR-95".</p>
+<h2>Part 2: The funky <code>escape</code> part</h2>
+<p>If we keep following the call chain, the first thing done to this UTF-16 byte stream appears to involve a strange construction:</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>escape<span style="color: #CC3300">``</span>
+</code></pre></div>
+<p>This is actually pretty simple - it's using a feature of the JavaScript language called "tagged templates." It's worth reading about <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates">JavaScript tagged templates on MDN</a>, but for now we can treat it like the <code>escape</code> function receives a list containing a single string, the string made of UTF-16 bytes derived from our non-printable UTF-8 bytes.</p>
+<p>We can put the tagged template part into the browser console, and we get the following result:</p>
+<p><code>"%uDB40%uDD4E%uDB40%uDD65%uDB40%uDD76%uDB40%uDD65%uDB40%uDD72%uDB40%uDD20%uDB40%uDD67%uDB40%uDD6F%uDB40%uDD6E%uDB40%uDD6E%uDB40%uDD61%uDB40%uDD20%uDB40%uDD72%uDB40%uDD75%uDB40%uDD6E%uDB40%uDD20%uDB40%uDD61%uDB40%uDD72%uDB40%uDD6F%uDB40%uDD75%uDB40%uDD6E%uDB40%uDD64%uDB40%uDD20%uDB40%uDD61%uDB40%uDD6E%uDB40%uDD64%uDB40%uDD20%uDB40%uDD64%uDB40%uDD65%uDB40%uDD73%uDB40%uDD65%uDB40%uDD72%uDB40%uDD74%uDB40%uDD20%uDB40%uDD79%uDB40%uDD6F%uDB40%uDD75"</code></p>
+<p>Look familiar? That is a big-endian UTF-16 representation of our original UTF-8 byte stream, except that it's percent-encoded in an interesting way. The <code>escape</code> function is <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/escape">deprecated according to MDN</a>.</p>
+<h2>Part 3: The replace part</h2>
+<p>Things are pretty simple from here on. </p>
+<p>Looking at the original,</p>
+<div class="codehilite" style="background: #f0f3f3"><pre style="line-height: 125%"><span></span><code>unescape(escape<span style="color: #CC3300">`󠅎󠅥󠅶󠅥󠅲󠄠󠅧󠅯󠅮󠅮󠅡󠄠󠅲󠅵󠅮󠄠󠅡󠅲󠅯󠅵󠅮󠅤󠄠󠅡󠅮󠅤󠄠󠅤󠅥󠅳󠅥󠅲󠅴󠄠󠅹󠅯󠅵`</span>.replace(<span style="color: #33AAAA">/u.{8}/g</span>,<span style="color: #CC3300">''</span>))
+</code></pre></div>
+<p><code>replace(/u.{8}/g,'')</code> is next. All this does is remove each instance of the letter "u" followed by 8 characters.</p>
+<p>This results in the following:</p>
+<p><code>"%4E%65%76%65%72%20%67%6F%6E%6E%61%20%72%75%6E%20%61%72%6F%75%6E%64%20%61%6E%64%20%64%65%73%65%72%74%20%79%6F%75"</code></p>
+<p>And now, we have simple percent-encoded ASCII.</p>
+<h2>Part 4: The unescape</h2>
+<p>And finally, the joke. Unescaping the percent-encoded ASCII results in:</p>
+<p><code>"Never gonna run around and desert you"</code></p>
+<h2>Reverse engineering this trick</h2>
+<p>So, how did someone figure this trick out? I'm unsure exactly, but my guess is that they simply looked for a block of non-printing code-points in Unicode, and then they found some way to convert these to ASCII without being super obvious. The path used here was to find a nice block of non-printing characters whose UTF-16 encodings ended in valid ASCII byte values. One really important thing is that these non-printing characters shouldn't be detected by many programs. It's not uncommon for programs to call out hidden text, like the way VSCode might alert you to a hidden function name. Variation selectors fill the role for that.</p>
+<h2>A short survey of encoding based threat vectors</h2>
+<ul>
+<li>Non-printable characters. See above.</li>
+<li>Escape schemes. Imagine having form validation that blocks <code>&lt;</code> characters, but someone submits <code>&amp;lt;</code> Did we block this? What about <code>&amp;#60;</code>? If we render these HTML entities into whatever HTML document we're producing, rather than placing the literal escape sequences into the document, then these get turned back into a <code>&lt;</code>. <a href="https://www.youtube.com/watch?v=Y4A7KMQEmfo">Escape schemes are not always totally obvious, either, and this has lead to tons of bugs in all kinds of software.</a></li>
+<li><a href="https://n3t-hunt3r.gitbook.io/pentest-book/web-application-pentesting/unicode-normalization-vulnerability">Unicode Normalization</a>.  </li>
+<li><a href="https://shiflett.org/blog/2005/googles-xss-vulnerability">Mixing encodings</a>. </li>
+</ul>
+</main>
+<aside>
+<h1>Tags</h1>
+<ul>
+<li><a href="./tag/amateur-radio.html">amateur radio</a></li>
+<li><a href="./tag/aws.html">aws</a></li>
+<li><a href="./tag/career.html">career</a></li>
+<li><a href="./tag/cdk.html">cdk</a></li>
+<li><a href="./tag/docker.html">docker</a></li>
+<li><a href="./tag/evergreen.html">evergreen</a></li>
+<li><a href="./tag/ham-radio.html">ham radio</a></li>
+<li><a href="./tag/jsii.html">jsii</a></li>
+<li><a href="./tag/kids.html">kids</a></li>
+<li><a href="./tag/learning.html">learning</a></li>
+<li><a href="./tag/linux.html">linux</a></li>
+<li><a href="./tag/open-source.html">open source</a></li>
+<li><a href="./tag/parenting.html">parenting</a></li>
+<li><a href="./tag/project-management.html">project management</a></li>
+<li><a href="./tag/projen.html">projen</a></li>
+<li><a href="./tag/python.html">python</a></li>
+<li><a href="./tag/raspi.html">raspi</a></li>
+<li><a href="./tag/resume.html">resume</a></li>
+<li><a href="./tag/security.html">security</a></li>
+<li><a href="./tag/shell.html">shell</a></li>
+<li><a href="./tag/software-development.html">software development</a></li>
+<li><a href="./tag/ubitx.html">ubitx</a></li>
+<li><a href="./tag/xonsh.html">xonsh</a></li>
+<li><a href="./tag/xontribs.html">xontribs</a></li>
+</ul>
+</aside>
+<script async="" data-goatcounter="https://dinogalactic.goatcounter.com/count" src="//gc.zgo.at/count.js"></script> </body>
+</html>
